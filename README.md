@@ -1,2 +1,7 @@
-# tnoyapms
-Tno + yapms
+# TNO map
+
+YAPms처럼 선거구를 칠해 보는 한국어 선거 지도 시뮬레이터 (TNO 테마).
+
+- 지도: 일본제국 중선거구 (내지·조선·대만·가라후토)
+- 기본 의석수: TNO 일본 총선 지도 기준
+- `index.html` 하나로 동작해요. GitHub Pages로 바로 열 수 있어요.
