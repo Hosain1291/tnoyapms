@@ -63,7 +63,7 @@ async function route() {
 }
 
 (async function init() {
-  initModals(); initEditor(); initChart(); initCode(); initExport(); initPres();
+  initModals(); initEditor(); initChart(); initCode(); initExport(); initPres(); initMobile();
   $('#back').onclick = () => { location.hash = 'menu'; };
   try { await loadMapList(); }
   catch (e) { $('#mapGroups').innerHTML = '<div class="hint">지도 목록(maps/index.json)을 불러오지 못했어요.</div>'; return; }

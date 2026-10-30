@@ -84,6 +84,7 @@ function renderParties() {
   store.parties.forEach((p, i) => mk(p.id, p.name, p.colors, T.t[p.id], T.mg[p.id], i < 9 ? i + 1 : ''));
   renderChart(T);
   if (isPres()) renderPres(T);
+  renderMobileParties(T);
 }
 function refresh() { renderParties(); updUndo(); save(); }
 
@@ -96,9 +97,9 @@ function updUndo() { $('#undo').disabled = !undoS.length; $('#redo').disabled = 
 /* ---------- 칠하기 ---------- */
 function clickDistrict(id) {
   const x = D(id);
-  if (mode === 'disable') { snap(); x.off = !x.off; paintOne(id); refresh(); showTip(id); return; }
-  if (mode === 'lock') { snap(); x.lock = !x.lock; paintOne(id); refresh(); showTip(id); return; }
-  if (x.off) { toast('비활성 선거구예요. 비활성 모드에서 다시 켜세요.'); return; }
+  if (mode === 'disable') { snap(); x.off = !x.off; paintOne(id); refresh(); showTip(id); if (isTouchUI()) showMBar(id); return; }
+  if (mode === 'lock') { snap(); x.lock = !x.lock; paintOne(id); refresh(); showTip(id); if (isTouchUI()) showMBar(id); return; }
+  if (x.off) { toast('비활성 선거구예요. 비활성 모드에서 다시 켜세요.'); if (isTouchUI()) showMBar(id); return; }
   if (x.lock) { toast('잠긴 선거구예요. 잠금 모드에서 풀 수 있어요.'); return; }
   if (mode === 'split') { openSplit(id); return; }
   snap();
@@ -106,6 +107,7 @@ function clickDistrict(id) {
   else if (owner(id) === store.sel) { x.m = ((x.m || 0) + 1) % 4; }   // 같은 정당이면 단계 순환
   else { x.a = { [store.sel]: seatsOf(id) }; x.m = 0; }
   paintOne(id); refresh(); showTip(id);
+  if (isTouchUI()) showMBar(id);
 }
 function dragPaint(id) {
   const x = D(id); if (x.off || x.lock) return;
@@ -194,7 +196,7 @@ function openView(v) {
   store.maps[v.key] = store.maps[v.key] || { d: {} }; M = store.maps[v.key];
   mapIds = idsOfView(v); inMap = {}; mapIds.forEach(id => inMap[id] = true);
   ids.forEach(id => els[id].classList.toggle('ctx', !inMap[id]));
-  undoS = []; redoS = [];
+  undoS = []; redoS = []; hideMBar();
   $('#menu').style.display = 'none'; $('#editor').classList.add('open');
   $('#mapTitle').textContent = v.key === 'all' ? `${MAP.name} — ${MAP.subtitle || ''}` : `${MAP.name} · ${v.name}`;
   $('#mapWinTitle').textContent = 'MAP · ' + v.name;
@@ -279,29 +281,43 @@ function initEditor() {
   const ptrs = new Map(); let drag = null, moved = false, pinch = null, painting = null, hovEl = null;
   const distAt = (x, y) => { const el = document.elementFromPoint(x, y); return el && el.dataset && el.dataset.id && inMap[el.dataset.id] ? el.dataset.id : null; };
   const setHov = id => { const el = id ? els[id] : null; if (el === hovEl) return; hovEl && hovEl.classList.remove('hov'); hovEl = el; if (el) { el.classList.add('hov'); el.parentNode.appendChild(el); } };
+  let lpTimer = null, lpFired = false;
+  const cancelLP = () => { clearTimeout(lpTimer); lpTimer = null; };
   svg.addEventListener('pointerdown', e => {
-    if (e.button === 2) return; svg.setPointerCapture(e.pointerId); ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY }); moved = false;
+    if (e.button === 2) return; try { svg.setPointerCapture(e.pointerId); } catch (er) { } ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY }); moved = false;
+    lastTouch = e.pointerType === 'touch'; lpFired = false; cancelLP();
     const id = e.target.dataset && e.target.dataset.id;
+    // 길게 누르면(0.5초) 의석 분할 창
+    if (e.pointerType !== 'mouse' && id && inMap[id] && ptrs.size === 1) {
+      lpTimer = setTimeout(() => {
+        lpTimer = null; if (moved || ptrs.size !== 1) return;
+        const x = D(id); lpFired = true; drag = null; painting = null;
+        if (x.off || x.lock) { toast('비활성이거나 잠긴 선거구예요.'); return; }
+        if (navigator.vibrate) try { navigator.vibrate(15); } catch (er) { }
+        showMBar(id); openSplit(id);
+      }, 500);
+    }
     if (ptrs.size === 1 && mode === 'fill' && (dragMode || e.shiftKey) && id && inMap[id]) { painting = { start: id, x: e.clientX, y: e.clientY, began: false }; return; }
     if (ptrs.size === 1) drag = { x: e.clientX, y: e.clientY, vb: { ...vb }, id };
-    if (ptrs.size === 2) { const [a, b] = [...ptrs.values()]; pinch = { d: Math.hypot(a.x - b.x, a.y - b.y) }; drag = null; painting = null; moved = true; }
+    if (ptrs.size === 2) { const [a, b] = [...ptrs.values()]; pinch = { d: Math.hypot(a.x - b.x, a.y - b.y) }; drag = null; painting = null; moved = true; cancelLP(); }
   });
   svg.addEventListener('pointermove', e => {
     if (!ptrs.has(e.pointerId)) { const id = e.target.dataset && e.target.dataset.id; if (id && inMap[id]) { setHov(id); showTip(id, e.clientX, e.clientY); } else { setHov(null); hideTip(); } return; }
     ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
     if (pinch && ptrs.size === 2) { const [a, b] = [...ptrs.values()]; const d = Math.hypot(a.x - b.x, a.y - b.y); zoomAt(pinch.d / d, (a.x + b.x) / 2, (a.y + b.y) / 2); pinch.d = d; return; }
     if (painting) {
-      if (!painting.began && Math.abs(e.clientX - painting.x) + Math.abs(e.clientY - painting.y) > 4) { painting.began = true; snap(); dragPaint(painting.start); }
+      if (!painting.began && Math.abs(e.clientX - painting.x) + Math.abs(e.clientY - painting.y) > 4) { cancelLP(); painting.began = true; snap(); dragPaint(painting.start); }
       if (painting.began) { const id = distAt(e.clientX, e.clientY); if (id) dragPaint(id); }
       return;
     }
     if (drag) {
-      const dx = e.clientX - drag.x, dy = e.clientY - drag.y; if (Math.abs(dx) + Math.abs(dy) > 5) moved = true;
+      const dx = e.clientX - drag.x, dy = e.clientY - drag.y; if (Math.abs(dx) + Math.abs(dy) > 8) { moved = true; cancelLP(); }
       if (moved) { const r = svg.getBoundingClientRect(); const s = Math.max(vb.w / r.width, vb.h / r.height); vb.x = drag.vb.x - dx * s; vb.y = drag.vb.y - dy * s; setVB(); hideTip(); }
     }
   });
   const endPtr = e => {
-    if (!ptrs.has(e.pointerId)) return; ptrs.delete(e.pointerId);
+    if (!ptrs.has(e.pointerId)) return; ptrs.delete(e.pointerId); cancelLP();
+    if (lpFired) { if (ptrs.size === 0) { drag = null; pinch = null; painting = null; } return; }
     if (ptrs.size === 0) {
       if (painting) { if (painting.began) refresh(); else clickDistrict(painting.start); painting = null; }
       else if (drag && !moved && drag.id && inMap[drag.id]) clickDistrict(drag.id);
