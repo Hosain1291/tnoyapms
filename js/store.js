@@ -7,7 +7,7 @@ function freshStore(meta) {
   const seats = {};
   ids.forEach(id => seats[id] = defaultSeat(id));
   return {
-    v: 3, map: meta.id, parties: meta.parties.map(([n, c], i) => ({ id: 'p' + (i + 1), name: n, colors: shades(c) })),
+    v: 3, map: meta.id, parties: meta.parties.map(([n, c], i) => ({ id: 'p' + (i + 1), name: n, cand: (meta.candidates || [])[i] || '', colors: shades(c) })),
     seats, maps: {}, nextId: meta.parties.length + 1, sel: 'p1'
   };
 }

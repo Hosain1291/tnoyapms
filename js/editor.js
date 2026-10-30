@@ -15,7 +15,7 @@ function buildMap() {
     p.setAttribute('d', d); p.dataset.id = id; g.appendChild(p); els[id] = p;
   });
   // 해안선: 흰 테두리를 선거구 아래에 깔아서 바깥쪽 경계만 보이게 해요
-  const s = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${MAP.width} ${MAP.height}" width="${MAP.width}" height="${MAP.height}"><g fill="none" stroke="#e6fbfb" stroke-width="2.6" stroke-linejoin="round">${DATA.map(d => `<path d="${d[2]}"/>`).join('')}</g></svg>`;
+  const s = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${MAP.width} ${MAP.height}" width="${MAP.width}" height="${MAP.height}"><g fill="none" stroke="#e6fbfb" stroke-width="${(2.6 * MAP.width / 1600).toFixed(2)}" stroke-linejoin="round">${DATA.map(d => `<path d="${d[2]}"/>`).join('')}</g></svg>`;
   $('#coast').setAttribute('href', URL.createObjectURL(new Blob([s], { type: 'image/svg+xml' })));
   $('#coast').setAttribute('width', MAP.width); $('#coast').setAttribute('height', MAP.height);
   builtFor = MAP.id;
@@ -83,6 +83,7 @@ function renderParties() {
   mk('toss', '경합 · 미정', null, T.toss, null, '0');
   store.parties.forEach((p, i) => mk(p.id, p.name, p.colors, T.t[p.id], T.mg[p.id], i < 9 ? i + 1 : ''));
   renderChart(T);
+  if (isPres()) renderPres(T);
 }
 function refresh() { renderParties(); updUndo(); save(); }
 
@@ -145,7 +146,7 @@ function spUpd() { paintOne(spId); refresh(); renderSplit(); }
 let ptId = null;
 function openParty(pid) {
   ptId = pid; const p = party(pid);
-  $('#ptName').value = p.name; $('#ptBase').value = p.colors[0];
+  $('#ptName').value = p.name; $('#ptCand').value = p.cand || ''; $('#ptBase').value = p.colors[0];
   $$('#mParty [data-i]').forEach(i => i.value = p.colors[+i.dataset.i]);
   $('#mParty').classList.add('open');
 }
@@ -175,7 +176,7 @@ function showTip(id, cx, cy) {
   const tip = $('#tip');
   if (cx !== undefined) tipXY = [cx, cy];
   const x = M.d[id] || { a: {} }, S = seatsOf(id);
-  let h = `<div><span class="t">${esc(nameOf(id))}</span><span class="j">${id}</span></div><div style="color:var(--mute);font-size:12px">${esc(regionName(region[id]))} · ${S}석${x.off ? ' · 비활성' : ''}${x.lock ? ' · 잠김' : ''}</div>`;
+  let h = `<div><span class="t">${esc(nameOf(id))}</span><span class="j">${id}</span></div><div style="color:var(--mute);font-size:12px">${esc(regionName(region[id]))} · ${isPres() ? '선거인단 ' + S : S + '석'}${x.off ? ' · 비활성' : ''}${x.lock ? ' · 잠김' : ''}</div>`;
   if (!x.off) {
     let u = 0;
     store.parties.forEach(p => { const v = x.a[p.id]; if (v) { u += v; h += `<div class="l"><span class="sw" style="background:${p.colors[x.m || 0]}"></span>${esc(p.name)} <span style="color:var(--mute);font-size:11px">${MARGINS[x.m || 0]}</span><b style="margin-left:auto">${v}</b></div>`; } });
@@ -197,6 +198,9 @@ function openView(v) {
   $('#menu').style.display = 'none'; $('#editor').classList.add('open');
   $('#mapTitle').textContent = v.key === 'all' ? `${MAP.name} — ${MAP.subtitle || ''}` : `${MAP.name} · ${v.name}`;
   $('#mapWinTitle').textContent = 'MAP · ' + v.name;
+  $('#mapTag').textContent = 'THE NEW ORDER · ' + (MAP.tag || MAP.name);
+  $('#pres').hidden = $('#presFoot').hidden = !isPres(); $('#chartSec').hidden = isPres();
+  $('#spSeatLbl').textContent = isPres() ? '이 주의 선거인단 수' : '이 선거구 의석수';
   paintAll(); refresh(); updTag();
   requestAnimationFrame(() => fitBox(boxOf(v)));
 }
@@ -245,6 +249,7 @@ function initEditor() {
 
   // 정당 편집 창
   $('#ptName').oninput = () => { party(ptId).name = $('#ptName').value; refresh(); updTag(); };
+  $('#ptCand').oninput = () => { party(ptId).cand = $('#ptCand').value; refresh(); };
   $('#ptBase').oninput = () => { const p = party(ptId); p.colors = shades($('#ptBase').value); $$('#mParty [data-i]').forEach(i => i.value = p.colors[+i.dataset.i]); paintAll(); refresh(); };
   $$('#mParty [data-i]').forEach(i => i.oninput = () => { party(ptId).colors[+i.dataset.i] = i.value; paintAll(); refresh(); });
   $('#ptDel').onclick = () => {

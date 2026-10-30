@@ -44,7 +44,7 @@
   </div>
  </div></div>
  <aside id="side">
-  <div class="sec win">
+  <div class="sec win" id="chartSec">
    <h4 class="tb"><span class="t">의회 구성</span><span class="ctog"><button data-c="hemi" class="on">반원</button><button data-c="bar">막대</button></span></h4>
    <div class="bd" id="chartBox"><svg id="hemi" viewBox="-1.06 -1.06 2.12 1.14"></svg><div id="bar"></div><div id="chartMsg"></div></div>
   </div>
@@ -66,12 +66,22 @@
    비활성 선거구는 의석 합계에서 빠지고, 잠긴 선거구는 칠해지지 않아요.
   </div></div>
  </aside>
- <main class="win"><div class="tb"><span class="t" id="mapWinTitle">Map</span><span class="ctl"><i>—</i><i>❐</i><i>✕</i></span></div><div id="mapWrap">
+ <main class="win"><div class="tb"><span class="t" id="mapWinTitle">Map</span><span class="ctl"><i>—</i><i>❐</i><i>✕</i></span></div><div id="pres" hidden>
+   <div class="ptabs"><span>THE SENATE</span><span class="on">PRESIDENTIAL ELECTION</span><span>POPULARITIES</span></div>
+   <div class="prow">
+    <div class="pc L"><div class="pname" id="pnL"></div><div class="pbody"><div class="portrait" id="ppL"></div><div class="pev" id="pevL"></div></div></div>
+    <div class="pmid"><div class="pbar" id="pbar"></div><div class="pwin" id="pwin"></div></div>
+    <div class="pc R"><div class="pname" id="pnR"></div><div class="pbody"><div class="pev" id="pevR"></div><div class="portrait" id="ppR"></div></div></div>
+   </div>
+  </div>
+  <div id="mapWrap">
   <svg id="map" xmlns="http://www.w3.org/2000/svg"><defs id="defs"></defs><image id="coast" x="0" y="0" width="1600" height="1623" style="pointer-events:none"/><g id="g"></g></svg>
   <div id="modeTag"></div>
   <div id="zoomCtl"><button id="zin">+</button><button id="zout">−</button><button id="zfit" style="font-size:13px">⤢</button></div>
   <div id="mapTag">THE NEW ORDER · IMPERIAL DIET</div>
- </div></main>
+ </div>
+  <div id="presFoot" hidden><div id="evList"></div><div id="pSplit"></div></div>
+ </main>
 </div>
 <div id="tip"></div>
 <div class="toast" id="toast"></div>
@@ -79,7 +89,7 @@
 
 <div class="modal" id="mSplit"><div class="box win"><div class="tb"><span class="t" id="mSplitT"></span><span class="ctl"><i class="close" style="cursor:pointer">✕</i></span></div><div class="bd">
  <h3 id="spTitle"></h3><div class="j" id="spJ"></div>
- <div class="alloc" style="border-bottom:1px solid var(--line);padding-bottom:10px;margin-bottom:10px"><span class="n"><b>이 선거구 의석수</b></span><button data-seat="-1">−</button><span class="v" id="spSeats"></span><button data-seat="1">+</button></div>
+ <div class="alloc" style="border-bottom:1px solid var(--line);padding-bottom:10px;margin-bottom:10px"><span class="n"><b id="spSeatLbl">이 선거구 의석수</b></span><button data-seat="-1">−</button><span class="v" id="spSeats"></span><button data-seat="1">+</button></div>
  <div id="spList"></div>
  <div class="field"><label>강도</label><select id="spMargin" style="flex:1;background:#0c0b08;border:1px solid var(--line2);padding:5px"><option value="0">확정</option><option value="1">유력</option><option value="2">우세</option><option value="3">경합우세</option></select></div>
  <div class="hint" id="spLeft"></div>
@@ -89,6 +99,7 @@
 <div class="modal" id="mParty"><div class="box win"><div class="tb"><span class="t">정당 편집</span><span class="ctl"><i class="close" style="cursor:pointer">✕</i></span></div><div class="bd">
  <h3>정당 편집</h3><div class="j">이름과 강도별 색을 정해요. 기본색을 바꾸면 네 단계 색이 자동으로 다시 만들어져요.</div>
  <div class="field"><label>이름</label><input type="text" id="ptName"></div>
+ <div class="field"><label>후보</label><input type="text" id="ptCand" placeholder="후보 이름 (선택)"></div>
  <div class="field"><label>기본색</label><input type="color" id="ptBase"><span class="hint" style="margin:0">→ 네 단계 자동 생성</span></div>
  <div class="field"><label>확정</label><input type="color" data-i="0"><label style="width:auto">유력</label><input type="color" data-i="1"><label style="width:auto">우세</label><input type="color" data-i="2"><label style="width:auto">경합우세</label><input type="color" data-i="3"></div>
  <div class="foot"><button id="ptDel" class="l">정당 삭제</button><button class="close on">완료</button></div>
@@ -119,6 +130,7 @@
 <script src="js/store.js"></script>
 <script src="js/chart.js"></script>
 <script src="js/editor.js"></script>
+<script src="js/president.js"></script>
 <script src="js/export.js"></script>
 <script src="js/app.js"></script>
 </body>

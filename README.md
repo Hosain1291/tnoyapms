@@ -12,6 +12,7 @@ js/
   maps.js             지도 불러오기 (maps 폴더 읽기)
   store.js            저장 · 저장 코드
   chart.js            의회 구성 차트 (반원 · 막대)
+  president.js        대통령 선거 화면 (후보 · 선거인단 막대 · 주별 목록)
   editor.js           칠하기 · 분할 · 비활성 · 잠금 · 되돌리기 · 확대
   export.js           지도 이미지 만들기
   app.js              지도 선택 화면 · 시작
@@ -20,6 +21,7 @@ maps/
   tno-japan/          일본제국 중선거구 지도
     map.svg           선거구 모양
     map.json          지도 이름 · 보기 · 의석수 · 한국어 이름 · 기본 정당
+  tno-usa/            미국 대통령 선거 (1960년 인구조사 선거인단, 537표 · 269표 당선)
 ```
 
 ## 새 지도 넣는 법
@@ -30,6 +32,8 @@ maps/
 4. `maps/index.json`의 `maps` 목록에 `{"id": "tno-germany", "folder": "tno-germany"}` 한 줄을 추가해요.
 
 그러면 지도 선택 화면에 자동으로 나타나요.
+
+`map.json`에 `"layout": "presidential"`을 넣으면 미국처럼 대통령 선거 화면(후보 두 명 · 당선선 막대 · 주별 목록)으로 열려요.
 
 ## GitHub Pages
 

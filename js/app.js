@@ -32,7 +32,7 @@ function renderMenu() {
       c.innerHTML = `<div class="tb"><span class="t">${esc(v.name)}</span><span class="ctl"><i>—</i><i>❐</i><i>✕</i></span></div>` +
         `<svg class="thumb" viewBox="${bx - p} ${by - p} ${bw + 2 * p} ${bh + 2 * p}" preserveAspectRatio="xMidYMid meet"><image href="${base + (meta.svg || 'map.svg')}" width="${meta.width}" height="${meta.height}"/></svg>` +
         (asg ? `<span class="tag">진행 중</span>` : '') +
-        `<div class="cb"><div class="meta">${esc(v.sub || '')} · 선거구 ${n} · ${tot}석</div><div class="prog"><i style="width:${tot ? asg / tot * 100 : 0}%"></i></div></div>`;
+        `<div class="cb"><div class="meta">${esc(v.sub || '')} · ${meta.layout === 'presidential' ? `주 ${n} · 선거인단 ${tot}` : `선거구 ${n} · ${tot}석`}</div><div class="prog"><i style="width:${tot ? asg / tot * 100 : 0}%"></i></div></div>`;
       c.onclick = () => { location.hash = meta.id + '--' + v.key; };
       box.appendChild(c);
     });
@@ -63,7 +63,7 @@ async function route() {
 }
 
 (async function init() {
-  initModals(); initEditor(); initChart(); initCode(); initExport();
+  initModals(); initEditor(); initChart(); initCode(); initExport(); initPres();
   $('#back').onclick = () => { location.hash = 'menu'; };
   try { await loadMapList(); }
   catch (e) { $('#mapGroups').innerHTML = '<div class="hint">지도 목록(maps/index.json)을 불러오지 못했어요.</div>'; return; }

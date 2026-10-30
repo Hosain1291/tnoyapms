@@ -125,3 +125,32 @@ textarea{width:100%;height:110px;font-family:monospace;font-size:11px}
 
 .mgroup{margin-bottom:26px}
 #loading{position:fixed;inset:0;display:none;align-items:center;justify-content:center;z-index:70;background:#071215cc;font-family:var(--lat);letter-spacing:.2em;color:var(--frame);font-size:14px}
+
+/* ---------- 대통령 선거 화면 (TNO 스타일) ---------- */
+#pres{border-bottom:2px solid var(--frame);background:#0a191d;padding:0 0 8px}
+#pres .ptabs{display:flex;justify-content:space-between;font-family:var(--lat);font-weight:700;font-size:12px;letter-spacing:.06em;color:var(--mute);border-bottom:1px solid var(--line2);padding:2px 10px}
+#pres .ptabs .on{color:#eaffff;border:1px solid var(--frame);padding:0 14px;background:#123238}
+#pres .prow{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:end;padding:6px 12px 0}
+#pres .pname{font-size:12px;color:var(--text);white-space:nowrap;margin-bottom:3px}
+#pres .pc.R .pname{text-align:right}
+#pres .pbody{display:flex;align-items:center;gap:10px}
+#pres .portrait{width:58px;height:64px;border:2px solid var(--frame);background:#0d2328;position:relative;overflow:hidden;box-shadow:0 0 8px #6fd6dc55}
+#pres .portrait svg{position:absolute;inset:0;width:100%;height:100%}
+#pres .pev{font-family:var(--lat);font-weight:700;font-size:34px;line-height:1;color:#eaffff;min-width:56px}
+#pres .pc.R .pev{text-align:right}
+#pres .pmid{position:relative;padding-bottom:30px}
+#pres .pbar{display:flex;height:30px;background:var(--toss);border:1px solid var(--line2);position:relative}
+#pres .pbar div{height:100%;transition:width .2s}
+#pres .pbar .mk{position:absolute;top:-4px;bottom:-4px;width:2px;background:#eaffff;box-shadow:0 0 6px #fff}
+#pres .pwin{position:absolute;transform:translateX(-50%);top:32px;text-align:center;font-family:var(--lat);font-weight:700;line-height:1.05;color:#eaffff;font-size:15px;white-space:nowrap}
+#pres .pwin small{display:block;font-size:12px;color:var(--text);font-weight:600}
+#presFoot{display:grid;grid-template-columns:1fr 170px;gap:8px;border-top:2px solid var(--frame);background:#0a191d;padding:6px 8px;max-height:150px;overflow:auto}
+#evList{columns:6 120px;column-gap:10px;font-family:var(--lat);font-weight:600;font-size:12px;line-height:1.35}
+#evList div{display:flex;justify-content:space-between;gap:4px;break-inside:avoid;cursor:default;padding:0 2px}
+#evList div:hover{background:#123238}
+#evList b{font-weight:700}
+#pSplit{border:1px solid var(--line2);padding:4px 8px;font-family:var(--lat);font-weight:600;font-size:12px}
+#pSplit h5{margin:0 0 3px;font-size:13px;letter-spacing:.06em;color:#eaffff;text-align:center}
+#pSplit div{display:flex;justify-content:space-between}
+@media (max-width:820px){#presFoot{grid-template-columns:1fr}#pres .pev{font-size:26px}#pres .portrait{width:44px;height:50px}}
+[hidden]{display:none!important}
