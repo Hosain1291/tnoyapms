@@ -1,0 +1,324 @@
+/* 편집 화면: 지도 그리기, 칠하기(YAPms 방식), 분할·비활성·잠금, 되돌리기, 확대·이동 */
+
+let curView = null, M = null, mapIds = [], inMap = {};
+let mode = 'fill', dragMode = false;
+let undoS = [], redoS = [];
+let els = {}, builtFor = null;
+let svg, g, defs;
+
+/* ---------- 지도 그리기 ---------- */
+function buildMap() {
+  if (builtFor === MAP.id) return;
+  g.innerHTML = ''; els = {};
+  DATA.forEach(([id, r, d]) => {
+    const p = document.createElementNS(NS, 'path');
+    p.setAttribute('d', d); p.dataset.id = id; g.appendChild(p); els[id] = p;
+  });
+  // 해안선: 흰 테두리를 선거구 아래에 깔아서 바깥쪽 경계만 보이게 해요
+  const s = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${MAP.width} ${MAP.height}" width="${MAP.width}" height="${MAP.height}"><g fill="none" stroke="#e6fbfb" stroke-width="2.6" stroke-linejoin="round">${DATA.map(d => `<path d="${d[2]}"/>`).join('')}</g></svg>`;
+  $('#coast').setAttribute('href', URL.createObjectURL(new Blob([s], { type: 'image/svg+xml' })));
+  $('#coast').setAttribute('width', MAP.width); $('#coast').setAttribute('height', MAP.height);
+  builtFor = MAP.id;
+}
+
+const D = id => M.d[id] || (M.d[id] = { a: {}, m: 0 });
+const seatsOf = id => store.seats[id];
+const used = x => Object.values(x.a).reduce((s, v) => s + v, 0);
+function owner(id) {
+  const x = M.d[id]; if (!x) return null;
+  const ks = Object.keys(x.a).filter(k => x.a[k] > 0 && party(k));
+  return ks.length === 1 && x.a[ks[0]] >= seatsOf(id) ? ks[0] : null;
+}
+
+function districtFill(id) {
+  const x = M.d[id];
+  if (x && x.off) return 'url(#offPat)';
+  if (!x) return TOSS;
+  const es = Object.entries(x.a).filter(([k, v]) => v > 0 && party(k));
+  if (!es.length) return TOSS;
+  const tot = seatsOf(id), u = es.reduce((s, [, v]) => s + v, 0);
+  if (es.length === 1 && u >= tot) return party(es[0][0]).colors[x.m || 0];
+  es.sort((a, b) => b[1] - a[1]);
+  const parts = es.map(([k, v]) => [party(k).colors[x.m || 0], v]); if (u < tot) parts.push([TOSS, tot - u]);
+  const key = 'st' + parts.map(([c, v]) => c.slice(1) + '_' + v).join('-');
+  if (!document.getElementById(key)) {
+    const W = 7, T = parts.reduce((s, [, v]) => s + v, 0);
+    const pat = document.createElementNS(NS, 'pattern'); pat.id = key;
+    pat.setAttribute('patternUnits', 'userSpaceOnUse'); pat.setAttribute('width', W); pat.setAttribute('height', W); pat.setAttribute('patternTransform', 'rotate(45)');
+    let x0 = 0;
+    parts.forEach(([c, v]) => { const w = W * v / T; const r = document.createElementNS(NS, 'rect'); r.setAttribute('x', x0); r.setAttribute('y', 0); r.setAttribute('width', w + .05); r.setAttribute('height', W); r.setAttribute('fill', c); pat.appendChild(r); x0 += w; });
+    defs.appendChild(pat);
+  }
+  return 'url(#' + key + ')';
+}
+function baseDefs() { defs.innerHTML = '<pattern id="offPat" patternUnits="userSpaceOnUse" width="5" height="5" patternTransform="rotate(45)"><rect width="5" height="5" fill="#0a1a1d"/><rect width="1.4" height="5" fill="#24484e"/></pattern>'; }
+function paintOne(id) { const p = els[id]; if (!inMap[id]) return; p.setAttribute('fill', districtFill(id)); const x = M.d[id]; p.classList.toggle('lock', !!(x && x.lock)); }
+function paintAll() { baseDefs(); ids.forEach(id => { if (inMap[id]) paintOne(id); else { els[id].setAttribute('fill', CTX_FILL); els[id].classList.remove('lock'); } }); }
+
+/* ---------- 합계 ---------- */
+function totals() {
+  const t = {}, mg = {}; store.parties.forEach(p => { t[p.id] = 0; mg[p.id] = [0, 0, 0, 0]; });
+  let all = 0, toss = 0;
+  mapIds.forEach(id => {
+    const x = M.d[id]; if (x && x.off) return;
+    const s = seatsOf(id); all += s; let u = 0;
+    if (x) for (const k in x.a) if (t[k] !== undefined && x.a[k] > 0) { const v = Math.min(x.a[k], s - u); t[k] += v; mg[k][x.m || 0] += v; u += v; }
+    toss += s - u;
+  });
+  return { t, mg, all, toss, maj: Math.floor(all / 2) + 1 };
+}
+
+/* ---------- 정당 목록 ---------- */
+function renderParties() {
+  const T = totals(), box = $('#parties'); box.innerHTML = '';
+  const mk = (pid, name, cols, tot, mg, k) => {
+    const el = document.createElement('div'); el.className = 'party' + (store.sel === pid ? ' sel' : ''); el.dataset.id = pid;
+    el.innerHTML = `<span class="key">${k}</span><span class="nm">${esc(name)}</span><span class="tot">${tot}</span>` +
+      (pid === 'toss' ? '<span></span>' : '<button class="ed" title="정당 편집">✎</button>') +
+      (mg ? `<div class="mg">${mg.map((v, i) => `<span style="background:${cols[i]};color:${lum(cols[i]) > 140 ? '#111' : '#f4ffff'}" title="${MARGINS[i]}">${v}</span>`).join('')}</div>`
+        : `<div class="mg"><span style="background:${TOSS};color:#d3f1f2">미정</span></div>`);
+    el.onclick = e => { if (e.target.classList.contains('ed')) { openParty(pid); return; } store.sel = pid; save(); renderParties(); updTag(); };
+    box.appendChild(el);
+  };
+  mk('toss', '경합 · 미정', null, T.toss, null, '0');
+  store.parties.forEach((p, i) => mk(p.id, p.name, p.colors, T.t[p.id], T.mg[p.id], i < 9 ? i + 1 : ''));
+  renderChart(T);
+}
+function refresh() { renderParties(); updUndo(); save(); }
+
+/* ---------- 되돌리기 ---------- */
+function snap() { undoS.push(JSON.stringify(M.d)); if (undoS.length > 150) undoS.shift(); redoS = []; updUndo(); }
+function undo() { if (!undoS.length) return; redoS.push(JSON.stringify(M.d)); M.d = JSON.parse(undoS.pop()); paintAll(); refresh(); }
+function redo() { if (!redoS.length) return; undoS.push(JSON.stringify(M.d)); M.d = JSON.parse(redoS.pop()); paintAll(); refresh(); }
+function updUndo() { $('#undo').disabled = !undoS.length; $('#redo').disabled = !redoS.length; }
+
+/* ---------- 칠하기 ---------- */
+function clickDistrict(id) {
+  const x = D(id);
+  if (mode === 'disable') { snap(); x.off = !x.off; paintOne(id); refresh(); showTip(id); return; }
+  if (mode === 'lock') { snap(); x.lock = !x.lock; paintOne(id); refresh(); showTip(id); return; }
+  if (x.off) { toast('비활성 선거구예요. 비활성 모드에서 다시 켜세요.'); return; }
+  if (x.lock) { toast('잠긴 선거구예요. 잠금 모드에서 풀 수 있어요.'); return; }
+  if (mode === 'split') { openSplit(id); return; }
+  snap();
+  if (store.sel === 'toss') { x.a = {}; x.m = 0; }
+  else if (owner(id) === store.sel) { x.m = ((x.m || 0) + 1) % 4; }   // 같은 정당이면 단계 순환
+  else { x.a = { [store.sel]: seatsOf(id) }; x.m = 0; }
+  paintOne(id); refresh(); showTip(id);
+}
+function dragPaint(id) {
+  const x = D(id); if (x.off || x.lock) return;
+  if (store.sel === 'toss') { if (!used(x)) return; x.a = {}; x.m = 0; }
+  else { if (owner(id) === store.sel) return; x.a = { [store.sel]: seatsOf(id) }; x.m = 0; }
+  paintOne(id);
+}
+
+const MODE_KO = { fill: '칠하기', split: '의석 분할', disable: '비활성', lock: '잠금' };
+function setMode(m) { mode = m; $$('#modes button').forEach(x => x.classList.toggle('on', x.dataset.mode === m)); updTag(); }
+function updTag() {
+  const p = store.sel === 'toss' ? '경합' : (party(store.sel) || {}).name;
+  $('#modeTag').innerHTML = `모드 <b>${MODE_KO[mode]}</b>` + (mode === 'fill' ? ` · ${esc(p)}` + (dragMode ? ' · 드래그' : '') : '');
+}
+
+/* ---------- 의석 분할 창 ---------- */
+let spId = null;
+function openSplit(id) { spId = id; renderSplit(); $('#mSplit').classList.add('open'); hideTip(); snap(); }
+function renderSplit() {
+  const x = D(spId), S = seatsOf(spId), u = used(x);
+  $('#mSplitT').textContent = '의석 분할 · ' + nameOf(spId);
+  $('#spJ').textContent = spId + ' · ' + regionName(region[spId]);
+  $('#spSeats').textContent = S; $('#spMargin').value = x.m || 0;
+  const L = $('#spList'); L.innerHTML = '';
+  store.parties.forEach(p => {
+    const v = x.a[p.id] || 0; const r = document.createElement('div'); r.className = 'alloc';
+    r.innerHTML = `<span class="sw" style="background:${p.colors[0]}"></span><span class="n">${esc(p.name)}</span><button>−</button><span class="v">${v}</span><button>+</button>`;
+    const [mi, pl] = r.querySelectorAll('button');
+    mi.onclick = () => { if (v > 0) { x.a[p.id] = v - 1; if (!x.a[p.id]) delete x.a[p.id]; spUpd(); } };
+    pl.onclick = () => { if (u < S) { x.a[p.id] = v + 1; spUpd(); } };
+    L.appendChild(r);
+  });
+  $('#spLeft').textContent = u < S ? `남은 의석 ${S - u}석 (경합)` : '모든 의석이 배정됐어요.';
+}
+function spUpd() { paintOne(spId); refresh(); renderSplit(); }
+
+/* ---------- 정당 편집 창 ---------- */
+let ptId = null;
+function openParty(pid) {
+  ptId = pid; const p = party(pid);
+  $('#ptName').value = p.name; $('#ptBase').value = p.colors[0];
+  $$('#mParty [data-i]').forEach(i => i.value = p.colors[+i.dataset.i]);
+  $('#mParty').classList.add('open');
+}
+
+/* ---------- 확대·이동 ---------- */
+let vb = { x: 0, y: 0, w: 1600, h: 1600 };
+const setVB = () => svg.setAttribute('viewBox', `${vb.x} ${vb.y} ${vb.w} ${vb.h}`);
+function fitBox(b) {
+  const r = svg.getBoundingClientRect(); if (!r.width) return;
+  const pad = .05; let w = b.w * (1 + pad * 2), h = b.h * (1 + pad * 2); const ar = r.width / r.height;
+  if (w / h < ar) w = h * ar; else h = w / ar;
+  vb = { x: b.x + b.w / 2 - w / 2, y: b.y + b.h / 2 - h / 2, w, h }; setVB();
+}
+function toSvg(cx, cy) {
+  const r = svg.getBoundingClientRect(); const s = Math.max(vb.w / r.width, vb.h / r.height);
+  const ox = (r.width - vb.w / s) / 2, oy = (r.height - vb.h / s) / 2;
+  return { x: vb.x + (cx - r.left - ox) * s, y: vb.y + (cy - r.top - oy) * s };
+}
+function zoomAt(f, cx, cy) {
+  const p = toSvg(cx, cy); const nw = Math.min(FULL.w * 3, Math.max(FULL.w / 64, vb.w * f)); const k = nw / vb.w;
+  vb = { x: p.x - (p.x - vb.x) * k, y: p.y - (p.y - vb.y) * k, w: vb.w * k, h: vb.h * k }; setVB();
+}
+
+/* ---------- 말풍선 ---------- */
+let tipXY = [0, 0];
+function showTip(id, cx, cy) {
+  const tip = $('#tip');
+  if (cx !== undefined) tipXY = [cx, cy];
+  const x = M.d[id] || { a: {} }, S = seatsOf(id);
+  let h = `<div><span class="t">${esc(nameOf(id))}</span><span class="j">${id}</span></div><div style="color:var(--mute);font-size:12px">${esc(regionName(region[id]))} · ${S}석${x.off ? ' · 비활성' : ''}${x.lock ? ' · 잠김' : ''}</div>`;
+  if (!x.off) {
+    let u = 0;
+    store.parties.forEach(p => { const v = x.a[p.id]; if (v) { u += v; h += `<div class="l"><span class="sw" style="background:${p.colors[x.m || 0]}"></span>${esc(p.name)} <span style="color:var(--mute);font-size:11px">${MARGINS[x.m || 0]}</span><b style="margin-left:auto">${v}</b></div>`; } });
+    if (u < S) h += `<div class="l" style="color:var(--mute)"><span class="sw" style="background:${TOSS}"></span>경합 <b style="margin-left:auto">${S - u}</b></div>`;
+  }
+  tip.innerHTML = h; tip.style.display = 'block';
+  const [px, py] = tipXY, w = tip.offsetWidth, hh = tip.offsetHeight;
+  tip.style.left = Math.min(innerWidth - w - 8, px + 14) + 'px'; tip.style.top = Math.min(innerHeight - hh - 8, py + 14) + 'px';
+}
+function hideTip() { $('#tip').style.display = 'none'; }
+
+/* ---------- 지도 열기 ---------- */
+function openView(v) {
+  curView = v;
+  store.maps[v.key] = store.maps[v.key] || { d: {} }; M = store.maps[v.key];
+  mapIds = idsOfView(v); inMap = {}; mapIds.forEach(id => inMap[id] = true);
+  ids.forEach(id => els[id].classList.toggle('ctx', !inMap[id]));
+  undoS = []; redoS = [];
+  $('#menu').style.display = 'none'; $('#editor').classList.add('open');
+  $('#mapTitle').textContent = v.key === 'all' ? `${MAP.name} — ${MAP.subtitle || ''}` : `${MAP.name} · ${v.name}`;
+  $('#mapWinTitle').textContent = 'MAP · ' + v.name;
+  paintAll(); refresh(); updTag();
+  requestAnimationFrame(() => fitBox(boxOf(v)));
+}
+
+/* ---------- 버튼·마우스·키보드 연결 ---------- */
+function initEditor() {
+  svg = $('#map'); g = $('#g'); defs = $('#defs');
+
+  $('#undo').onclick = undo; $('#redo').onclick = redo;
+  $$('#modes button').forEach(b => b.onclick = () => setMode(b.dataset.mode));
+  $('#dragBtn').onclick = () => { dragMode = !dragMode; $('#dragBtn').classList.toggle('on', dragMode); updTag(); };
+
+  $('#fillAll').onclick = () => {
+    if (store.sel === 'toss') { toast('먼저 정당을 고르세요.'); return; }
+    const p = party(store.sel);
+    confirmBox('남은 곳 채우기', `아직 칠하지 않은 선거구를 모두 '${p.name}' 확정으로 칠해요.`, () => {
+      snap(); mapIds.forEach(id => { const x = D(id); if (x.off || x.lock || used(x)) return; x.a = { [p.id]: seatsOf(id) }; x.m = 0; });
+      paintAll(); refresh();
+    });
+  };
+  $('#clearMap').onclick = () => confirmBox('지도 초기화', '이 지도의 칠한 내용, 비활성, 잠금을 모두 지워요. 되돌리기로 복구할 수 있어요.', () => { snap(); M.d = {}; paintAll(); refresh(); });
+  $('#bulkApply').onclick = () => {
+    const n = Math.max(1, Math.min(30, parseInt($('#bulkSeats').value) || 3));
+    confirmBox('의석수 일괄 적용', `모든 선거구를 ${n}석으로 바꿔요. 한 정당이 다 가진 선거구는 그대로 그 정당 몫이 되고, 나눠진 선거구는 비워져요.`, () => {
+      snap(); const src = {}; ids.forEach(id => src[id] = n); applySeats(store, src); paintAll(); refresh();
+    });
+  };
+  $('#seatReset').onclick = () => confirmBox('기본 의석수로 되돌리기', '모든 선거구를 지도에 정해진 기본 의석수로 되돌려요. 한 정당이 다 가진 선거구는 그대로 그 정당 몫이 돼요.', () => {
+    snap(); applySeats(store, MAP.seats || {}); paintAll(); refresh();
+  });
+
+  // 분할 창
+  $('#spMargin').onchange = () => { D(spId).m = +$('#spMargin').value; spUpd(); };
+  $$('#mSplit [data-seat]').forEach(b => b.onclick = () => {
+    const old = seatsOf(spId), n = Math.max(1, Math.min(30, old + +b.dataset.seat)); if (n === old) return;
+    store.seats[spId] = n;
+    Object.values(store.maps).forEach(mp => {
+      const x = mp.d[spId]; if (!x) return; const ks = Object.keys(x.a).filter(k => x.a[k] > 0);
+      if (ks.length === 1 && x.a[ks[0]] === old) { x.a[ks[0]] = n; return; }
+      let u = used(x); const ord = ks.sort((a, b) => x.a[a] - x.a[b]);
+      while (u > n) { const k = ord.find(k => x.a[k] > 0); x.a[k]--; if (!x.a[k]) delete x.a[k]; u--; }
+    });
+    spUpd();
+  });
+  $('#spClear').onclick = () => { D(spId).a = {}; spUpd(); };
+
+  // 정당 편집 창
+  $('#ptName').oninput = () => { party(ptId).name = $('#ptName').value; refresh(); updTag(); };
+  $('#ptBase').oninput = () => { const p = party(ptId); p.colors = shades($('#ptBase').value); $$('#mParty [data-i]').forEach(i => i.value = p.colors[+i.dataset.i]); paintAll(); refresh(); };
+  $$('#mParty [data-i]').forEach(i => i.oninput = () => { party(ptId).colors[+i.dataset.i] = i.value; paintAll(); refresh(); });
+  $('#ptDel').onclick = () => {
+    const p = party(ptId); $('#mParty').classList.remove('open');
+    confirmBox(`'${p.name}' 삭제`, '모든 보기에서 이 정당이 가진 의석이 경합으로 돌아가요.', () => {
+      store.parties = store.parties.filter(x => x.id !== p.id);
+      Object.values(store.maps).forEach(mp => { for (const id in mp.d) delete mp.d[id].a[p.id]; });
+      if (store.sel === p.id) store.sel = store.parties[0] ? store.parties[0].id : 'toss';
+      undoS = []; redoS = []; paintAll(); refresh(); updTag();
+    });
+  };
+  $('#addParty').onclick = () => {
+    const pal = ['#8e5bd0', '#2aa6ad', '#c9b02c', '#d14d82', '#9b6b45', '#3e9c84', '#86a83a', '#5a62c9'];
+    const id = 'p' + (store.nextId++);
+    store.parties.push({ id, name: '새 정당 ' + (store.parties.length + 1), colors: shades(pal[store.parties.length % pal.length]) });
+    store.sel = id; refresh(); updTag(); openParty(id);
+    setTimeout(() => { $('#ptName').focus(); $('#ptName').select(); }, 30);
+  };
+
+  // 확대 버튼
+  $('#zin').onclick = () => { const r = svg.getBoundingClientRect(); zoomAt(1 / 1.4, r.left + r.width / 2, r.top + r.height / 2); };
+  $('#zout').onclick = () => { const r = svg.getBoundingClientRect(); zoomAt(1.4, r.left + r.width / 2, r.top + r.height / 2); };
+  $('#zfit').onclick = () => fitBox(boxOf(curView));
+
+  // 마우스·터치
+  svg.addEventListener('wheel', e => { e.preventDefault(); zoomAt(e.deltaY > 0 ? 1.15 : 1 / 1.15, e.clientX, e.clientY); }, { passive: false });
+  const ptrs = new Map(); let drag = null, moved = false, pinch = null, painting = null, hovEl = null;
+  const distAt = (x, y) => { const el = document.elementFromPoint(x, y); return el && el.dataset && el.dataset.id && inMap[el.dataset.id] ? el.dataset.id : null; };
+  const setHov = id => { const el = id ? els[id] : null; if (el === hovEl) return; hovEl && hovEl.classList.remove('hov'); hovEl = el; if (el) { el.classList.add('hov'); el.parentNode.appendChild(el); } };
+  svg.addEventListener('pointerdown', e => {
+    if (e.button === 2) return; svg.setPointerCapture(e.pointerId); ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY }); moved = false;
+    const id = e.target.dataset && e.target.dataset.id;
+    if (ptrs.size === 1 && mode === 'fill' && (dragMode || e.shiftKey) && id && inMap[id]) { painting = { start: id, x: e.clientX, y: e.clientY, began: false }; return; }
+    if (ptrs.size === 1) drag = { x: e.clientX, y: e.clientY, vb: { ...vb }, id };
+    if (ptrs.size === 2) { const [a, b] = [...ptrs.values()]; pinch = { d: Math.hypot(a.x - b.x, a.y - b.y) }; drag = null; painting = null; moved = true; }
+  });
+  svg.addEventListener('pointermove', e => {
+    if (!ptrs.has(e.pointerId)) { const id = e.target.dataset && e.target.dataset.id; if (id && inMap[id]) { setHov(id); showTip(id, e.clientX, e.clientY); } else { setHov(null); hideTip(); } return; }
+    ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (pinch && ptrs.size === 2) { const [a, b] = [...ptrs.values()]; const d = Math.hypot(a.x - b.x, a.y - b.y); zoomAt(pinch.d / d, (a.x + b.x) / 2, (a.y + b.y) / 2); pinch.d = d; return; }
+    if (painting) {
+      if (!painting.began && Math.abs(e.clientX - painting.x) + Math.abs(e.clientY - painting.y) > 4) { painting.began = true; snap(); dragPaint(painting.start); }
+      if (painting.began) { const id = distAt(e.clientX, e.clientY); if (id) dragPaint(id); }
+      return;
+    }
+    if (drag) {
+      const dx = e.clientX - drag.x, dy = e.clientY - drag.y; if (Math.abs(dx) + Math.abs(dy) > 5) moved = true;
+      if (moved) { const r = svg.getBoundingClientRect(); const s = Math.max(vb.w / r.width, vb.h / r.height); vb.x = drag.vb.x - dx * s; vb.y = drag.vb.y - dy * s; setVB(); hideTip(); }
+    }
+  });
+  const endPtr = e => {
+    if (!ptrs.has(e.pointerId)) return; ptrs.delete(e.pointerId);
+    if (ptrs.size === 0) {
+      if (painting) { if (painting.began) refresh(); else clickDistrict(painting.start); painting = null; }
+      else if (drag && !moved && drag.id && inMap[drag.id]) clickDistrict(drag.id);
+      drag = null; pinch = null;
+    } else if (ptrs.size < 2) pinch = null;
+  };
+  svg.addEventListener('pointerup', endPtr); svg.addEventListener('pointercancel', endPtr);
+  svg.addEventListener('contextmenu', e => {
+    e.preventDefault(); const id = e.target.dataset && e.target.dataset.id;
+    if (id && inMap[id]) { const x = D(id); if (x.off || x.lock) { toast('비활성이거나 잠긴 선거구예요.'); return; } openSplit(id); }
+  });
+  svg.addEventListener('pointerleave', () => { hideTip(); setHov(null); });
+
+  // 키보드
+  addEventListener('keydown', e => {
+    if (!curView || !$('#editor').classList.contains('open') || $('.modal.open') || /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)) return;
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') { e.preventDefault(); e.shiftKey ? redo() : undo(); return; }
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y') { e.preventDefault(); redo(); return; }
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    const k = e.key.toLowerCase();
+    if (k === 'f') setMode('fill'); else if (k === 's') setMode('split'); else if (k === 'd') setMode('disable'); else if (k === 'l') setMode('lock');
+    else if (k === '0' || k === '`') { store.sel = 'toss'; refresh(); updTag(); }
+    else if (/^[1-9]$/.test(k)) { const p = store.parties[+k - 1]; if (p) { store.sel = p.id; refresh(); updTag(); } }
+  });
+}
