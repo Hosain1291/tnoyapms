@@ -213,7 +213,7 @@ textarea{width:100%;height:110px;font-family:monospace;font-size:11px}
 
 /* ---------- 색 고르기 ---------- */
 #mColor{z-index:48}
-.cbtn{width:40px;height:30px;padding:0;border:2px solid var(--line2);border-radius:3px;cursor:pointer}
+.cbtn{width:40px;height:30px;min-width:40px;padding:0;border:2px solid var(--line2);border-radius:3px;cursor:pointer;background-image:none;-moz-appearance:none;appearance:none}
 .cbtn.big{width:56px;height:34px}
 .cbtn:hover{border-color:var(--frame)}
 .mgf{gap:10px}

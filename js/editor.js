@@ -149,8 +149,9 @@ function spUpd() { paintOne(spId); refresh(); renderSplit(); }
 let ptId = null;
 function paintPartyColors() {
   const p = party(ptId); if (!p) return;
-  $('#ptBase').style.background = p.colors[0]; $('#ptBase').title = p.colors[0];
-  $$('#mParty [data-i]').forEach(b => { b.style.background = p.colors[+b.dataset.i]; b.title = p.colors[+b.dataset.i]; });
+  const fill = (b, c) => { b.style.backgroundImage = 'none'; b.style.backgroundColor = c; b.title = c; };
+  fill($('#ptBase'), p.colors[0]);
+  $$('#mParty [data-i]').forEach(b => fill(b, p.colors[+b.dataset.i]));
 }
 function openParty(pid) {
   ptId = pid; const p = party(pid);

@@ -11,9 +11,9 @@ let FULL = { x: 0, y: 0, w: 1600, h: 1600 };
 const svgCache = {};
 
 async function loadMapList() {
-  const idx = await (await fetch('maps/index.json')).json();
+  const idx = await (await fetch('maps/index.json', { cache: 'no-cache' })).json();
   for (const m of idx.maps) {
-    const meta = await (await fetch(`maps/${m.folder}/map.json`)).json();
+    const meta = await (await fetch(`maps/${m.folder}/map.json`, { cache: 'no-cache' })).json();
     MAP_LIST.push({ id: meta.id || m.id, folder: m.folder, meta });
   }
 }
@@ -25,7 +25,7 @@ async function useMap(id) {
   if (MAP && MAP.id === id) return true;
   MAP = e.meta; MAP_BASE = `maps/${e.folder}/`;
   let txt = svgCache[id];
-  if (!txt) { txt = await (await fetch(MAP_BASE + (MAP.svg || 'map.svg'))).text(); svgCache[id] = txt; }
+  if (!txt) { txt = await (await fetch(MAP_BASE + (MAP.svg || 'map.svg'), { cache: 'no-cache' })).text(); svgCache[id] = txt; }
   const doc = new DOMParser().parseFromString(txt, 'image/svg+xml');
   const alias = MAP.regionAlias || {};
   DATA = [...doc.querySelectorAll('path[id]')].map(p => {
