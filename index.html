@@ -102,8 +102,8 @@
  <h3>정당 편집</h3><div class="j">이름과 강도별 색을 정해요. 기본색을 바꾸면 네 단계 색이 자동으로 다시 만들어져요.</div>
  <div class="field"><label>이름</label><input type="text" id="ptName"></div>
  <div class="field"><label>후보</label><input type="text" id="ptCand" placeholder="후보 이름 (선택)"></div>
- <div class="field"><label>기본색</label><input type="color" id="ptBase"><span class="hint" style="margin:0">→ 네 단계 자동 생성</span></div>
- <div class="field"><label>확정</label><input type="color" data-i="0"><label style="width:auto">유력</label><input type="color" data-i="1"><label style="width:auto">우세</label><input type="color" data-i="2"><label style="width:auto">경합우세</label><input type="color" data-i="3"></div>
+ <div class="field"><label>기본색</label><button class="cbtn big" id="ptBase"></button><span class="hint" style="margin:0">누르면 색 고르기 · 네 단계 색 자동 생성</span></div>
+ <div class="field mgf"><div><button class="cbtn" data-i="0"></button><span>확정</span></div><div><button class="cbtn" data-i="1"></button><span>유력</span></div><div><button class="cbtn" data-i="2"></button><span>우세</span></div><div><button class="cbtn" data-i="3"></button><span>경합우세</span></div></div>
  <div class="foot"><button id="ptDel" class="l">정당 삭제</button><button class="close on">완료</button></div>
 </div></div></div>
 
@@ -132,6 +132,23 @@
  <div class="foot"><button id="pngDl">받기</button><button class="close on">닫기</button></div>
 </div></div></div>
 
+<div class="modal" id="mColor"><div class="box win" style="width:min(380px,100%)"><div class="tb"><span class="t">색 고르기</span><span class="ctl"><i id="cpX" style="cursor:pointer">✕</i></span></div><div class="bd">
+ <div id="cpSV" class="cp-sv"><div class="cp-w"></div><div class="cp-b"></div><div id="cpSVk" class="cp-k"></div></div>
+ <div id="cpH" class="cp-h"><div id="cpHk" class="cp-k"></div></div>
+ <div class="cp-row">
+  <div class="cp-prev"><button id="cpOld" title="원래 색으로"></button><div id="cpNew"></div></div>
+  <label class="cp-in"><span>HEX</span><input id="cpHex" maxlength="7" spellcheck="false"></label>
+  <label class="cp-in s"><span>R</span><input id="cpR" type="number" min="0" max="255"></label>
+  <label class="cp-in s"><span>G</span><input id="cpG" type="number" min="0" max="255"></label>
+  <label class="cp-in s"><span>B</span><input id="cpB" type="number" min="0" max="255"></label>
+ </div>
+ <div class="cp-tools"><button id="cpDrop" class="on">🎯 스포이드</button><button id="cpImgBtn">🖼 이미지에서</button><button id="cpMapBtn">🗺 지도에서</button><input type="file" id="cpFile" accept="image/*" hidden></div>
+ <div id="cpImgWrap" hidden><div class="cp-imghead"><span class="cp-lens" id="cpLens"></span><span id="cpLensTxt">이미지를 눌러 색을 고르세요</span><button id="cpImgClose">닫기</button></div><canvas id="cpCanvas"></canvas></div>
+ <div class="cp-lab">추천 색</div><div id="cpPresets" class="cp-sws"></div>
+ <div class="cp-lab">최근 색</div><div id="cpRecent" class="cp-sws"></div>
+ <div class="foot"><button id="cpCancel">취소</button><button id="cpOk" class="on">확인</button></div>
+</div></div></div>
+
 <div class="modal" id="mConfirm"><div class="box win"><div class="tb"><span class="t" id="mConfirmT"></span><span class="ctl"><i class="close" style="cursor:pointer">✕</i></span></div><div class="bd">
  <h3 id="cfT"></h3><div class="j" id="cfJ" style="margin-bottom:0"></div>
  <div class="foot"><button class="close">취소</button><button id="cfOk" class="on">확인</button></div>
@@ -144,6 +161,7 @@
 <script src="js/editor.js"></script>
 <script src="js/president.js"></script>
 <script src="js/mobile.js"></script>
+<script src="js/colorpicker.js"></script>
 <script src="js/export.js"></script>
 <script src="js/app.js"></script>
 </body>

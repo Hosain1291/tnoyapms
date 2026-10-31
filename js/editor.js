@@ -96,6 +96,7 @@ function updUndo() { $('#undo').disabled = !undoS.length; $('#redo').disabled = 
 
 /* ---------- 칠하기 ---------- */
 function clickDistrict(id) {
+  if (typeof mapPickCb === 'function' && mapPickCb) { mapPickCb(id); return; }  // 색 고르기: 지도에서 고르기
   const x = D(id);
   if (mode === 'disable') { snap(); x.off = !x.off; paintOne(id); refresh(); showTip(id); if (isTouchUI()) showMBar(id); return; }
   if (mode === 'lock') { snap(); x.lock = !x.lock; paintOne(id); refresh(); showTip(id); if (isTouchUI()) showMBar(id); return; }
@@ -146,10 +147,15 @@ function spUpd() { paintOne(spId); refresh(); renderSplit(); }
 
 /* ---------- 정당 편집 창 ---------- */
 let ptId = null;
+function paintPartyColors() {
+  const p = party(ptId); if (!p) return;
+  $('#ptBase').style.background = p.colors[0]; $('#ptBase').title = p.colors[0];
+  $$('#mParty [data-i]').forEach(b => { b.style.background = p.colors[+b.dataset.i]; b.title = p.colors[+b.dataset.i]; });
+}
 function openParty(pid) {
   ptId = pid; const p = party(pid);
-  $('#ptName').value = p.name; $('#ptCand').value = p.cand || ''; $('#ptBase').value = p.colors[0];
-  $$('#mParty [data-i]').forEach(i => i.value = p.colors[+i.dataset.i]);
+  $('#ptName').value = p.name; $('#ptCand').value = p.cand || '';
+  paintPartyColors();
   $('#mParty').classList.add('open');
 }
 
@@ -252,8 +258,9 @@ function initEditor() {
   // 정당 편집 창
   $('#ptName').oninput = () => { party(ptId).name = $('#ptName').value; refresh(); updTag(); };
   $('#ptCand').oninput = () => { party(ptId).cand = $('#ptCand').value; refresh(); };
-  $('#ptBase').oninput = () => { const p = party(ptId); p.colors = shades($('#ptBase').value); $$('#mParty [data-i]').forEach(i => i.value = p.colors[+i.dataset.i]); paintAll(); refresh(); };
-  $$('#mParty [data-i]').forEach(i => i.oninput = () => { party(ptId).colors[+i.dataset.i] = i.value; paintAll(); refresh(); });
+  // 색 칸을 누르면 색 고르기 창 (스포이드 지원)
+  $('#ptBase').onclick = () => openColorPicker(party(ptId).colors[0], c => { party(ptId).colors = shades(c); paintPartyColors(); paintAll(); refresh(); });
+  $$('#mParty [data-i]').forEach(b => b.onclick = () => openColorPicker(party(ptId).colors[+b.dataset.i], c => { party(ptId).colors[+b.dataset.i] = c; paintPartyColors(); paintAll(); refresh(); }));
   $('#ptDel').onclick = () => {
     const p = party(ptId); $('#mParty').classList.remove('open');
     confirmBox(`'${p.name}' 삭제`, '모든 보기에서 이 정당이 가진 의석이 경합으로 돌아가요.', () => {
