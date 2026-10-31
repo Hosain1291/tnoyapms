@@ -6,7 +6,7 @@
 <title>TNO map</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Orbit&family=IBM+Plex+Sans+KR:wght@400;500;700&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=202610311601">
+<link rel="stylesheet" href="css/style.css?v=202610311604">
 </head>
 <body>
 
@@ -183,25 +183,33 @@
  <div class="foot"><button id="pmReset" class="l">기본 정당으로</button><button id="pmAdd">+ 정당 추가</button><button class="close on">완료</button></div>
 </div></div></div>
 
+<div class="modal" id="mLeave"><div class="box win"><div class="tb"><span class="t">지도에서 나가기</span><span class="ctl"><i class="close" style="cursor:pointer">✕</i></span></div><div class="bd">
+ <div class="j" id="lvInfo" style="font-size:13px;color:var(--text)"></div>
+ <div class="hint" style="margin-bottom:10px">초기화하면 다음에 들어올 때 처음 지도 화면부터 시작해요. 정당 목록과 의석수는 그대로예요.</div>
+ <label class="tog"><span><b>다음부터 묻지 않기</b><small>옵션 → '지도에서 나갈 때'에서 다시 바꿀 수 있어요</small></span><input type="checkbox" id="lvRemember"><i></i></label>
+ <input type="hidden" id="lvTarget">
+ <div class="foot"><button class="close l">취소</button><button id="lvKeep">저장하고 나가기</button><button id="lvReset" class="on">초기화하고 나가기</button></div>
+</div></div></div>
+
 <div class="modal" id="mConfirm"><div class="box win"><div class="tb"><span class="t" id="mConfirmT"></span><span class="ctl"><i class="close" style="cursor:pointer">✕</i></span></div><div class="bd">
  <h3 id="cfT"></h3><div class="j" id="cfJ" style="margin-bottom:0"></div>
  <div class="foot"><button class="close">취소</button><button id="cfOk" class="on">확인</button></div>
 </div></div></div>
 
-<script src="js/util.js?v=202610311601"></script>
-<script src="js/maps.js?v=202610311601"></script>
-<script src="js/store.js?v=202610311601"></script>
-<script src="js/chart.js?v=202610311601"></script>
-<script src="js/editor.js?v=202610311601"></script>
-<script src="js/president.js?v=202610311601"></script>
-<script src="js/mobile.js?v=202610311601"></script>
-<script src="js/parties.js?v=202610311601"></script>
-<script src="js/options.js?v=202610311601"></script>
-<script src="js/labels.js?v=202610311601"></script>
-<script src="js/tools.js?v=202610311601"></script>
-<script src="js/custom.js?v=202610311601"></script>
-<script src="js/colorpicker.js?v=202610311601"></script>
-<script src="js/export.js?v=202610311601"></script>
-<script src="js/app.js?v=202610311601"></script>
+<script src="js/util.js?v=202610311604"></script>
+<script src="js/maps.js?v=202610311604"></script>
+<script src="js/store.js?v=202610311604"></script>
+<script src="js/chart.js?v=202610311604"></script>
+<script src="js/editor.js?v=202610311604"></script>
+<script src="js/president.js?v=202610311604"></script>
+<script src="js/mobile.js?v=202610311604"></script>
+<script src="js/parties.js?v=202610311604"></script>
+<script src="js/options.js?v=202610311604"></script>
+<script src="js/labels.js?v=202610311604"></script>
+<script src="js/tools.js?v=202610311604"></script>
+<script src="js/custom.js?v=202610311604"></script>
+<script src="js/colorpicker.js?v=202610311604"></script>
+<script src="js/export.js?v=202610311604"></script>
+<script src="js/app.js?v=202610311604"></script>
 </body>
 </html>

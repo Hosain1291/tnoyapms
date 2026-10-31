@@ -49,13 +49,44 @@ function renderMenu() {
 }
 
 function showMenu() {
-  curView = null; hideTip();
+  curView = null; curHash = null; hideTip();
   $('#editor').classList.remove('open'); $('#menu').style.display = 'block';
   renderMenu(); scrollTo(0, 0);
 }
 
+/* 지도에서 나갈 때: 물어보기 / 항상 초기화 / 항상 저장 (옵션) */
+let curHash = null, leaveOK = false, skipRoute = false;
+const hasWork = () => M && Object.values(M.d || {}).some(x => x.off || x.lock || Object.values(x.a || {}).some(v => v > 0));
+function resetCurrentView() { if (!M) return; M.d = {}; save(); }
+function leaveTo(target) {
+  leaveOK = true;
+  if (location.hash.replace('#', '') === target) { route(); } else location.hash = target;
+}
+function askLeave(target) {
+  $('#lvTarget').value = target; $('#lvRemember').checked = false;
+  $('#lvInfo').textContent = `'${curView.key === 'all' ? MAP.name : MAP.name + ' · ' + curView.name}'에 칠한 내용이 있어요.`;
+  $('#mLeave').classList.add('open');
+}
+function initLeave() {
+  const go = mode => {
+    if ($('#lvRemember').checked) { OPT.leave = mode; saveOpt(); }
+    if (mode === 'reset') resetCurrentView();
+    $('#mLeave').classList.remove('open'); leaveTo($('#lvTarget').value);
+  };
+  $('#lvReset').onclick = () => go('reset');
+  $('#lvKeep').onclick = () => go('keep');
+}
+
 async function route() {
+  if (skipRoute) { skipRoute = false; return; }
   let h = location.hash.replace('#', '');
+  // 편집 중인 지도에서 다른 곳으로 나갈 때
+  if (curView && curHash && h !== curHash && !leaveOK && hasWork()) {
+    const mode = OPT.leave || 'ask';
+    if (mode === 'ask') { skipRoute = true; location.replace('#' + curHash); askLeave(h); return; }
+    if (mode === 'reset') resetCurrentView();
+  }
+  leaveOK = false;
   if (h.startsWith('map-')) { location.replace('#tno-japan--' + h.slice(4)); return; } // 예전 주소
   const i = h.indexOf('--');
   if (i < 0) return showMenu();
@@ -67,11 +98,11 @@ async function route() {
     $('#loading').style.display = 'none';
   }
   const v = viewOf(key); if (!v) return showMenu();
-  openView(v);
+  openView(v); curHash = h;
 }
 
 (async function init() {
-  initModals(); initEditor(); initChart(); initCode(); initExport(); initPres(); initMobile(); initColorPicker(); initOptions(); initTools(); initPresent(); initCustom(); initPartyManager();
+  initModals(); initEditor(); initChart(); initCode(); initExport(); initPres(); initMobile(); initColorPicker(); initOptions(); initTools(); initPresent(); initCustom(); initPartyManager(); initLeave();
   $('#back').onclick = () => { location.hash = 'menu'; };
   try { await loadMapList(); await loadCustomMaps(); }
   catch (e) { $('#mapGroups').innerHTML = '<div class="hint">지도 목록(maps/index.json)을 불러오지 못했어요.</div>'; return; }

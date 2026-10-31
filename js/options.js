@@ -3,7 +3,7 @@
 const OPT_DEFAULT = {
   labels: true, labelSize: 2, labelColor: 'auto',
   stroke: 'pink', strokeW: 1, coast: true,
-  tooltip: true, leans: true, lockMap: false
+  tooltip: true, leans: true, lockMap: false, leave: 'ask'
 };
 const LABEL_PX = [9, 11, 13, 16, 20];
 const STROKE_COLORS = { pink: '#d86a78', bg: '#081619', white: '#e6fbfb', black: '#000000', cyan: '#8fe3e8' };
@@ -40,7 +40,9 @@ function renderOptions() {
    <div class="ogrp"><div class="olab">보기</div>
     ${tog('tooltip', '말풍선 표시', '마우스를 올리면 선거구 정보를 보여줘요')}
     ${tog('leans', '차트에 강도 나눠 보기', '확정·유력·우세·경합우세를 색 농도로 구분해요')}
-    ${tog('lockMap', '지도 잠금', '실수로 칠해지지 않게 편집을 막아요')}</div>`;
+    ${tog('lockMap', '지도 잠금', '실수로 칠해지지 않게 편집을 막아요')}</div>
+   <div class="ogrp"><div class="olab">지도에서 나갈 때</div>
+    <div class="orow"><span>칠한 내용</span>${seg('leave', [['ask', '물어보기'], ['reset', '항상 초기화'], ['keep', '항상 저장']])}</div></div>`;
 }
 
 function initOptions() {
