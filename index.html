@@ -6,7 +6,7 @@
 <title>TNO map</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Orbit&family=IBM+Plex+Sans+KR:wght@400;500;700&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=202610311532">
+<link rel="stylesheet" href="css/style.css?v=202610311535">
 </head>
 <body>
 
@@ -149,20 +149,26 @@
  <div class="foot"><button id="cpCancel">취소</button><button id="cpOk" class="on">확인</button></div>
 </div></div></div>
 
+<div id="sdOverlay" hidden>
+ <div class="sd-bar"><span>🎯 화면 스포이드</span><span id="sdInfo"></span><button id="sdCancel">취소</button></div>
+ <canvas id="sdCanvas"></canvas>
+ <div id="sdLensWrap" hidden><canvas id="sdLens"></canvas><div class="sd-hex"><span id="sdSw"></span><b id="sdHex"></b></div></div>
+</div>
+
 <div class="modal" id="mConfirm"><div class="box win"><div class="tb"><span class="t" id="mConfirmT"></span><span class="ctl"><i class="close" style="cursor:pointer">✕</i></span></div><div class="bd">
  <h3 id="cfT"></h3><div class="j" id="cfJ" style="margin-bottom:0"></div>
  <div class="foot"><button class="close">취소</button><button id="cfOk" class="on">확인</button></div>
 </div></div></div>
 
-<script src="js/util.js?v=202610311532"></script>
-<script src="js/maps.js?v=202610311532"></script>
-<script src="js/store.js?v=202610311532"></script>
-<script src="js/chart.js?v=202610311532"></script>
-<script src="js/editor.js?v=202610311532"></script>
-<script src="js/president.js?v=202610311532"></script>
-<script src="js/mobile.js?v=202610311532"></script>
-<script src="js/colorpicker.js?v=202610311532"></script>
-<script src="js/export.js?v=202610311532"></script>
-<script src="js/app.js?v=202610311532"></script>
+<script src="js/util.js?v=202610311535"></script>
+<script src="js/maps.js?v=202610311535"></script>
+<script src="js/store.js?v=202610311535"></script>
+<script src="js/chart.js?v=202610311535"></script>
+<script src="js/editor.js?v=202610311535"></script>
+<script src="js/president.js?v=202610311535"></script>
+<script src="js/mobile.js?v=202610311535"></script>
+<script src="js/colorpicker.js?v=202610311535"></script>
+<script src="js/export.js?v=202610311535"></script>
+<script src="js/app.js?v=202610311535"></script>
 </body>
 </html>

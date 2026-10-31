@@ -69,6 +69,7 @@ function fillColorOf(id) {
 }
 
 function initColorPicker() {
+  initScreenDropper();
   cpDrag($('#cpSV'), (x, y) => { cp.s = x; cp.v = 1 - y; cpRender(); });
   cpDrag($('#cpH'), x => { cp.h = Math.min(359.9, x * 360); cpRender(); });
   $('#cpHex').addEventListener('input', () => { const c = cpValid($('#cpHex').value); if (c) { Object.assign(cp, cpHexToHsv(c)); cpRender(); } });
@@ -83,11 +84,15 @@ function initColorPicker() {
 
   // ① 화면 스포이드
   $('#cpDrop').onclick = async () => {
-    if (!window.EyeDropper) { toast('이 브라우저는 화면 스포이드를 지원하지 않아요. 이미지·지도에서 고르기를 써 보세요.'); return; }
-    try { const r = await new EyeDropper().open(); cpSet(r.sRGBHex); }
-    catch (e) { if (e && e.name !== 'AbortError') toast('여기서는 화면 스포이드가 막혀 있어요. 이미지·지도에서 고르기를 써 보세요.'); }
+    // 크롬·엣지: 브라우저 기본 스포이드
+    if (window.EyeDropper) {
+      try { const r = await new EyeDropper().open(); cpSet(r.sRGBHex); return; }
+      catch (e) { if (e && e.name === 'AbortError') return; }  // 막혀 있으면 아래 화면 캡처 방식으로
+    }
+    // 파이어폭스·사파리 등: 화면을 한 장 캡처해서 돋보기로 고르기
+    if (navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia) { screenDropper(); return; }
+    toast('이 기기에서는 화면 스포이드를 쓸 수 없어요. 🖼 이미지에서 고르기를 써 보세요.');
   };
-  if (!window.EyeDropper) $('#cpDrop').title = '크롬·엣지(PC)에서 쓸 수 있어요';
 
   // ② 이미지에서 고르기
   $('#cpImgBtn').onclick = () => $('#cpFile').click();
@@ -130,4 +135,54 @@ function colorButton(btn, get, set) {
   const paint = () => { btn.style.background = get(); btn.title = get(); };
   btn.onclick = () => openColorPicker(get(), c => { set(c); paint(); });
   paint(); return paint;
+}
+
+/* ---------- 화면 캡처 스포이드 (EyeDropper가 없는 브라우저용) ---------- */
+async function screenDropper() {
+  let stream;
+  try { stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false }); }
+  catch (e) {
+    if (e && e.name === 'NotAllowedError') toast('화면 공유를 허용해야 스포이드를 쓸 수 있어요.');
+    else toast('여기서는 화면 캡처가 막혀 있어요. GitHub Pages 주소에서 써 보세요.');
+    return;
+  }
+  const video = document.createElement('video'); video.muted = true; video.playsInline = true; video.srcObject = stream;
+  try { await video.play(); } catch (e) { }
+  await new Promise(r => { if (video.videoWidth) r(); else video.onloadedmetadata = () => r(); });
+  await new Promise(r => setTimeout(r, 250));   // 공유 안내창이 사라질 시간
+  const cv = $('#sdCanvas'); cv.width = video.videoWidth; cv.height = video.videoHeight;
+  cv.getContext('2d').drawImage(video, 0, 0);
+  stream.getTracks().forEach(tr => tr.stop());
+  const ov = $('#sdOverlay'); ov.hidden = false;
+  $('#sdInfo').textContent = '원하는 곳을 누르세요 · Esc 취소';
+}
+
+function initScreenDropper() {
+  const ov = $('#sdOverlay'), cv = $('#sdCanvas'), lens = $('#sdLens'), lx = lens.getContext('2d');
+  const N = 11, Z = 11;  // 11×11 픽셀을 11배로
+  lens.width = lens.height = N * Z;
+  const at = e => {  // 화면에 맞춰 줄어든(가운데 정렬) 그림 기준 좌표
+    const r = cv.getBoundingClientRect(), s = Math.min(r.width / cv.width, r.height / cv.height);
+    const ox = r.left + (r.width - cv.width * s) / 2, oy = r.top + (r.height - cv.height * s) / 2;
+    return { x: Math.floor((e.clientX - ox) / s), y: Math.floor((e.clientY - oy) / s) };
+  };
+  const colorAt = (x, y) => { const d = cv.getContext('2d').getImageData(Math.max(0, Math.min(cv.width - 1, x)), Math.max(0, Math.min(cv.height - 1, y)), 1, 1).data; return toHex([d[0], d[1], d[2]]); };
+  const move = e => {
+    const { x, y } = at(e);
+    lx.imageSmoothingEnabled = false; lx.clearRect(0, 0, lens.width, lens.height);
+    lx.drawImage(cv, x - (N >> 1), y - (N >> 1), N, N, 0, 0, N * Z, N * Z);
+    lx.strokeStyle = '#fff'; lx.lineWidth = 2; lx.strokeRect((N >> 1) * Z, (N >> 1) * Z, Z, Z);
+    const hex = colorAt(x, y);
+    const wrap = $('#sdLensWrap'); wrap.hidden = false;
+    const off = e.pointerType === 'touch' ? -150 : 20;  // 손가락에 가리지 않게
+    wrap.style.left = Math.min(innerWidth - 140, Math.max(4, e.clientX + 20)) + 'px';
+    wrap.style.top = Math.min(innerHeight - 160, Math.max(4, e.clientY + off)) + 'px';
+    $('#sdHex').textContent = hex; $('#sdSw').style.background = hex;
+  };
+  const close = () => { ov.hidden = true; $('#sdLensWrap').hidden = true; };
+  cv.addEventListener('pointermove', move);
+  cv.addEventListener('pointerdown', e => { move(e); });
+  cv.addEventListener('pointerup', e => { const { x, y } = at(e); cpSet(colorAt(x, y)); close(); toast('색을 가져왔어요.'); });
+  $('#sdCancel').onclick = close;
+  addEventListener('keydown', e => { if (e.key === 'Escape' && !ov.hidden) close(); });
 }
