@@ -21,6 +21,7 @@ function applyOptions() {
   document.body.classList.toggle('maplocked', !!OPT.lockMap);
   if (typeof updateLabels === 'function' && M) { labelsDirty = true; updateLabels(); }
   if (M) renderParties();
+  const lb = $('#lblBtn'); if (lb) { lb.innerHTML = `숫자 <b>${OPT.labels ? 'YES' : 'NO'}</b>`; lb.classList.toggle('on', !!OPT.labels); }
 }
 
 function renderOptions() {
@@ -28,7 +29,8 @@ function renderOptions() {
   const tog = (key, t, sub) => `<label class="tog"><span><b>${t}</b>${sub ? `<small>${sub}</small>` : ''}</span><input type="checkbox" data-k="${key}" ${OPT[key] ? 'checked' : ''}><i></i></label>`;
   $('#optBody').innerHTML = `
    <div class="ogrp"><div class="olab">지도 글자</div>
-    ${tog('labels', '지도에 의석수 표시', '선거구 위에 숫자(미국은 주 약자도)를 보여줘요')}
+    <div class="orow"><span>지도 숫자</span>${seg('labels', [[true, 'YES'], [false, 'NO']])}</div>
+    <div class="hint" style="margin:-2px 0 4px">선거구 위에 의석수(미국은 주 약자도)를 보여줘요. 위쪽 '숫자' 버튼으로도 바꿀 수 있어요.</div>
     <div class="orow"><span>글자 크기</span>${seg('labelSize', [[0, '아주 작게'], [1, '작게'], [2, '보통'], [3, '크게'], [4, '아주 크게']])}</div>
     <div class="orow"><span>글자 색</span>${seg('labelColor', [['auto', '자동'], ['white', '흰색'], ['black', '검은색']])}</div></div>
    <div class="ogrp"><div class="olab">경계선</div>
@@ -43,10 +45,11 @@ function renderOptions() {
 
 function initOptions() {
   $('#optBtn').onclick = () => { renderOptions(); $('#mOpt').classList.add('open'); };
+  $('#lblBtn').onclick = () => { OPT.labels = !OPT.labels; saveOpt(); applyOptions(); toast(`지도 숫자 ${OPT.labels ? 'YES' : 'NO'}`); };
   $('#optBody').addEventListener('click', e => {
     const b = e.target.closest('.seg button'); if (!b) return;
     const k = b.parentElement.dataset.k, v = b.dataset.v;
-    OPT[k] = isNaN(+v) ? v : +v; saveOpt(); renderOptions(); applyOptions();
+    OPT[k] = v === 'true' ? true : v === 'false' ? false : isNaN(+v) ? v : +v; saveOpt(); renderOptions(); applyOptions();
   });
   $('#optBody').addEventListener('input', e => {
     const t = e.target, k = t.dataset.k; if (!k) return;

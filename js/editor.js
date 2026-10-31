@@ -74,7 +74,7 @@ function renderParties() {
   const T = totals(), box = $('#parties'); box.innerHTML = '';
   const mk = (pid, name, cols, tot, mg, k) => {
     const el = document.createElement('div'); el.className = 'party' + (store.sel === pid ? ' sel' : ''); el.dataset.id = pid;
-    const note = MAP.partyNotes && MAP.partyNotes[name];
+    const pp = party(pid), note = (pp && pp.note) || (MAP.partyNotes && MAP.partyNotes[name]);
     el.innerHTML = `<span class="key">${k}</span><span class="nm">${esc(name)}${note ? `<small>${esc(note)}</small>` : ''}</span><span class="tot">${tot}</span>` +
       (pid === 'toss' ? '<span></span>' : '<button class="ed" title="정당 편집">✎</button>') +
       (mg ? `<div class="mg">${mg.map((v, i) => `<span style="background:${cols[i]};color:${lum(cols[i]) > 140 ? '#111' : '#f4ffff'}" title="${MARGINS[i]}">${v}</span>`).join('')}</div>`
@@ -83,7 +83,14 @@ function renderParties() {
     box.appendChild(el);
   };
   mk('toss', '경합 · 미정', null, T.toss, null, '0');
-  store.parties.forEach((p, i) => mk(p.id, p.name, p.colors, T.t[p.id], T.mg[p.id], i < 9 ? i + 1 : ''));
+  // TNO처럼 묶음별로 (내지 / 할당 의석 조선 / 할당 의석 대만)
+  const gs = partyGroups(), vis = visibleParties();
+  gs.forEach(gr => {
+    const list = vis.filter(p => (p.group || gs[0].key) === gr.key); if (!list.length) return;
+    if (gr.name && gs.length > 1) { const hd = document.createElement('div'); hd.className = 'pgroup'; hd.innerHTML = `<span>◈</span>${esc(gr.name)}`; box.appendChild(hd); }
+    list.forEach(p => { const i = vis.indexOf(p); mk(p.id, p.name, p.colors, T.t[p.id], T.mg[p.id], i < 9 ? i + 1 : ''); });
+  });
+  vis.filter(p => !gs.some(gr => gr.key === (p.group || gs[0].key))).forEach(p => { const i = vis.indexOf(p); mk(p.id, p.name, p.colors, T.t[p.id], T.mg[p.id], i < 9 ? i + 1 : ''); });
   renderChart(T);
   if (isPres()) renderPres(T);
   renderMobileParties(T);
@@ -107,6 +114,7 @@ function clickDistrict(id) {
   if (x.lock) { toast('잠긴 선거구예요. 잠금 모드에서 풀 수 있어요.'); return; }
   if (mode === 'split') { openSplit(id); return; }
   snap();
+  if (store.sel !== 'toss' && !allowedIn(party(store.sel), id)) { cantRunMsg(party(store.sel), id); return; }
   if (store.sel === 'toss') { x.a = {}; x.m = 0; }
   else if (owner(id) === store.sel) { x.m = ((x.m || 0) + 1) % 4; }   // 같은 정당이면 단계 순환
   else { x.a = { [store.sel]: seatsOf(id) }; x.m = 0; }
@@ -116,6 +124,7 @@ function clickDistrict(id) {
 function dragPaint(id) {
   if (OPT.lockMap) return;
   const x = D(id); if (x.off || x.lock) return;
+  if (store.sel !== 'toss' && !allowedIn(party(store.sel), id)) return;
   if (store.sel === 'toss') { if (!used(x)) return; x.a = {}; x.m = 0; }
   else { if (owner(id) === store.sel) return; x.a = { [store.sel]: seatsOf(id) }; x.m = 0; }
   paintOne(id);
@@ -138,7 +147,7 @@ function renderSplit() {
   $('#spJ').textContent = spId + ' · ' + regionName(region[spId]);
   $('#spSeats').textContent = S; $('#spMargin').value = x.m || 0;
   const L = $('#spList'); L.innerHTML = '';
-  store.parties.forEach(p => {
+  store.parties.filter(p => allowedIn(p, spId) || x.a[p.id]).forEach(p => {
     const v = x.a[p.id] || 0; const r = document.createElement('div'); r.className = 'alloc';
     r.innerHTML = `<span class="sw" style="background:${p.colors[0]}"></span><span class="n">${esc(p.name)}</span><button>−</button><span class="v">${v}</span><button>+</button>`;
     const [mi, pl] = r.querySelectorAll('button');
@@ -231,7 +240,7 @@ function initEditor() {
     if (store.sel === 'toss') { toast('먼저 정당을 고르세요.'); return; }
     const p = party(store.sel);
     confirmBox('남은 곳 채우기', `아직 칠하지 않은 선거구를 모두 '${p.name}' 확정으로 칠해요.`, () => {
-      snap(); mapIds.forEach(id => { const x = D(id); if (x.off || x.lock || used(x)) return; x.a = { [p.id]: seatsOf(id) }; x.m = 0; });
+      snap(); mapIds.forEach(id => { const x = D(id); if (x.off || x.lock || used(x) || !allowedIn(p, id)) return; x.a = { [p.id]: seatsOf(id) }; x.m = 0; });
       paintAll(); refresh();
     });
   };
@@ -282,7 +291,8 @@ function initEditor() {
   $('#addParty').onclick = () => {
     const pal = ['#8e5bd0', '#2aa6ad', '#c9b02c', '#d14d82', '#9b6b45', '#3e9c84', '#86a83a', '#5a62c9'];
     const id = 'p' + (store.nextId++);
-    store.parties.push({ id, name: '새 정당 ' + (store.parties.length + 1), colors: shades(pal[store.parties.length % pal.length]) });
+    const gs = partyGroups(), gr = curView ? (gs.find(x => (x.regions || []).some(r => curView.regions.includes(r)) && curView.key !== 'all') || gs[0]) : gs[0];
+    store.parties.push({ id, name: '새 정당 ' + (store.parties.length + 1), colors: shades(pal[store.parties.length % pal.length]), regions: curView && curView.key !== 'all' ? (gr.regions || null) : null, group: gr.key });
     store.sel = id; refresh(); updTag(); openParty(id);
     setTimeout(() => { $('#ptName').focus(); $('#ptName').select(); }, 30);
   };
@@ -356,6 +366,6 @@ function initEditor() {
     const k = e.key.toLowerCase();
     if (k === 'f') setMode('fill'); else if (k === 's') setMode('split'); else if (k === 'd') setMode('disable'); else if (k === 'l') setMode('lock');
     else if (k === '0' || k === '`') { store.sel = 'toss'; refresh(); updTag(); }
-    else if (/^[1-9]$/.test(k)) { const p = store.parties[+k - 1]; if (p) { store.sel = p.id; refresh(); updTag(); } }
+    else if (/^[1-9]$/.test(k)) { const p = visibleParties()[+k - 1]; if (p) { store.sel = p.id; refresh(); updTag(); } }
   });
 }

@@ -2,8 +2,8 @@
 
 function renderTable() {
   const q = ($('#tbQ').value || '').trim().toLowerCase();
-  const opts = (sel) => `<option value="toss"${sel === 'toss' ? ' selected' : ''}>경합</option>` +
-    store.parties.map(p => `<option value="${p.id}"${sel === p.id ? ' selected' : ''}>${esc(p.name)}</option>`).join('');
+  const opts = (sel, id) => `<option value="toss"${sel === 'toss' ? ' selected' : ''}>경합</option>` +
+    store.parties.filter(p => allowedIn(p, id) || p.id === sel).map(p => `<option value="${p.id}"${sel === p.id ? ' selected' : ''}>${esc(p.name)}</option>`).join('');
   const rows = mapIds.filter(id => !q || [nameOf(id), id, regionName(region[id]), (MAP.labels || {})[id] || ''].some(s => String(s).toLowerCase().includes(q)))
     .map(id => {
       const x = M.d[id] || { a: {} }, ks = Object.keys(x.a).filter(k => x.a[k] > 0 && party(k));
@@ -14,7 +14,7 @@ function renderTable() {
         <td><span class="sw" style="background:${col}"></span></td>
         <td><b>${esc(nameOf(id))}</b><small>${esc(id)} · ${esc(regionName(region[id]))}</small></td>
         <td><input type="number" min="1" max="99" value="${seatsOf(id)}" data-f="seats"></td>
-        <td>${split ? `<button data-f="split" class="sm">분할됨 ✎</button>` : `<select data-f="win">${opts(sel)}</select>`}</td>
+        <td>${split ? `<button data-f="split" class="sm">분할됨 ✎</button>` : `<select data-f="win">${opts(sel, id)}</select>`}</td>
         <td><select data-f="m">${MARGINS.map((m, i) => `<option value="${i}"${(x.m || 0) === i ? ' selected' : ''}>${m}</option>`).join('')}</select></td>
         <td><input type="checkbox" data-f="off" ${x.off ? 'checked' : ''} title="비활성"></td>
       </tr>`;

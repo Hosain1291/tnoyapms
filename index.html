@@ -6,7 +6,7 @@
 <title>TNO map</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Orbit&family=IBM+Plex+Sans+KR:wght@400;500;700&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=202610311555">
+<link rel="stylesheet" href="css/style.css?v=202610311601">
 </head>
 <body>
 
@@ -34,7 +34,7 @@
    <button data-mode="lock" title="잠금 (L)">잠금</button>
   </div>
   <div class="grp"><button id="dragBtn" title="누른 채로 끌면 연속으로 칠해요 (Shift를 누른 채 끌어도 돼요)">드래그 칠하기</button></div>
-  <div class="grp"><button id="optBtn">옵션</button><button id="toolsBtn">표 편집</button><button id="presentBtn">발표</button></div>
+  <div class="grp"><button id="lblBtn">숫자 <b>YES</b></button><button id="optBtn">옵션</button><button id="toolsBtn">표 편집</button><button id="presentBtn">발표</button></div>
   <div class="grp"><button id="undo" title="되돌리기 (Ctrl+Z)">↶</button><button id="redo" title="다시 실행 (Ctrl+Y)">↷</button></div>
   <span class="sp"></span>
   <div class="grp">
@@ -50,7 +50,7 @@
    <div class="bd" id="chartBox"><svg id="hemi" viewBox="-1.06 -1.06 2.12 1.14"></svg><div id="bar"></div><svg id="pie" viewBox="-1.12 -1.12 2.24 2.24" style="display:none"></svg><div id="chartMsg"></div></div>
   </div>
   <div class="sec win">
-   <h4 class="tb"><span class="t">정당 · 숫자키로 선택</span><span class="ctl"><i>—</i><i>❐</i><i>✕</i></span></h4><div class="bd">
+   <h4 class="tb"><span class="t">정당 · 숫자키로 선택</span><button id="pmBtn" class="tbbtn">정당 관리</button></h4><div class="bd">
    <div id="parties"></div>
    <div class="row2"><button id="addParty">+ 정당 추가</button><button id="resetParties">기본 정당으로</button></div>
    <div class="hint">선택한 정당으로 선거구를 누르면 <b>확정</b>으로 칠해지고, 다시 누를 때마다 <b>확정 → 유력 → 우세 → 경합우세</b> 순으로 바뀌어요. <b>경합</b>을 골라 누르면 비워져요.</div>
@@ -177,24 +177,31 @@
  <div class="foot"><button class="close">취소</button><button id="cuSave" class="on">만들기</button></div>
 </div></div></div>
 
+<div class="modal" id="mPM"><div class="box win" style="width:min(640px,100%)"><div class="tb"><span class="t">정당 관리</span><span class="ctl"><i class="close" style="cursor:pointer">✕</i></span></div><div class="bd">
+ <div class="j">순서·이름·색·묶음·출마 지역을 한곳에서 바꿔요. 출마 지역을 고른 정당은 그 지역 선거구에만 칠해져요.</div>
+ <div id="pmList"></div>
+ <div class="foot"><button id="pmReset" class="l">기본 정당으로</button><button id="pmAdd">+ 정당 추가</button><button class="close on">완료</button></div>
+</div></div></div>
+
 <div class="modal" id="mConfirm"><div class="box win"><div class="tb"><span class="t" id="mConfirmT"></span><span class="ctl"><i class="close" style="cursor:pointer">✕</i></span></div><div class="bd">
  <h3 id="cfT"></h3><div class="j" id="cfJ" style="margin-bottom:0"></div>
  <div class="foot"><button class="close">취소</button><button id="cfOk" class="on">확인</button></div>
 </div></div></div>
 
-<script src="js/util.js?v=202610311555"></script>
-<script src="js/maps.js?v=202610311555"></script>
-<script src="js/store.js?v=202610311555"></script>
-<script src="js/chart.js?v=202610311555"></script>
-<script src="js/editor.js?v=202610311555"></script>
-<script src="js/president.js?v=202610311555"></script>
-<script src="js/mobile.js?v=202610311555"></script>
-<script src="js/options.js?v=202610311555"></script>
-<script src="js/labels.js?v=202610311555"></script>
-<script src="js/tools.js?v=202610311555"></script>
-<script src="js/custom.js?v=202610311555"></script>
-<script src="js/colorpicker.js?v=202610311555"></script>
-<script src="js/export.js?v=202610311555"></script>
-<script src="js/app.js?v=202610311555"></script>
+<script src="js/util.js?v=202610311601"></script>
+<script src="js/maps.js?v=202610311601"></script>
+<script src="js/store.js?v=202610311601"></script>
+<script src="js/chart.js?v=202610311601"></script>
+<script src="js/editor.js?v=202610311601"></script>
+<script src="js/president.js?v=202610311601"></script>
+<script src="js/mobile.js?v=202610311601"></script>
+<script src="js/parties.js?v=202610311601"></script>
+<script src="js/options.js?v=202610311601"></script>
+<script src="js/labels.js?v=202610311601"></script>
+<script src="js/tools.js?v=202610311601"></script>
+<script src="js/custom.js?v=202610311601"></script>
+<script src="js/colorpicker.js?v=202610311601"></script>
+<script src="js/export.js?v=202610311601"></script>
+<script src="js/app.js?v=202610311601"></script>
 </body>
 </html>

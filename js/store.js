@@ -5,7 +5,7 @@ const storeKey = mapId => 'tnomap:' + mapId;
 
 /* map.json 의 기본 정당: [이름, 색] 또는 [이름, [확정, 유력, 우세, 경합우세]] */
 function defaultParties(meta) {
-  return meta.parties.map(([n, c], i) => ({ id: 'p' + (i + 1), name: n, cand: (meta.candidates || [])[i] || '', colors: Array.isArray(c) ? c.slice(0, 4) : shades(c) }));
+  return meta.parties.map((e, i) => { const o = partyEntry(e); return { id: 'p' + (i + 1), name: o.name, cand: (meta.candidates || [])[i] || '', colors: o.colors, regions: o.regions, group: o.group }; });
 }
 
 /* 기본 정당 목록으로 바꾸기: 이름이 같은 정당의 칠한 결과는 그대로 옮겨요 */
@@ -35,6 +35,7 @@ function normalize(s) {
   const old = MAP.oldDefaultParties;
   if (old && s.parties.map(p => p.name).join('|') === old.join('|') &&
       !Object.values(s.maps).some(mp => Object.values(mp.d || {}).some(x => Object.values(x.a || {}).some(v => v > 0)))) resetParties(s);
+  fillPartyMeta(s);
   if (s.sel !== 'toss' && !s.parties.find(p => p.id === s.sel)) s.sel = s.parties[0] ? s.parties[0].id : 'toss';
   return s;
 }

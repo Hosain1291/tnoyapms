@@ -91,123 +91,190 @@
   }
  ],
  "parties": [
-  [
-   "국민자유당",
-   [
+  {
+   "name": "국민자유당",
+   "colors": [
     "#139313",
     "#5cc05e",
     "#a5eeaa",
     "#c9f5cc"
-   ]
-  ],
-  [
-   "진보당",
-   [
+   ],
+   "group": "naichi",
+   "regions": [
+    "Japan",
+    "Karafuto"
+   ],
+   "note": "国民自由党"
+  },
+  {
+   "name": "진보당",
+   "colors": [
     "#b01e2b",
     "#d24e5a",
     "#f57f88",
     "#f9b2b8"
-   ]
-  ],
-  [
-   "사회민주당",
-   [
+   ],
+   "group": "naichi",
+   "regions": [
+    "Japan",
+    "Karafuto"
+   ],
+   "note": "進歩党"
+  },
+  {
+   "name": "사회민주당",
+   "colors": [
     "#21a2b8",
     "#36c5dc",
     "#4be8ff",
     "#93f1ff"
-   ]
-  ],
-  [
-   "중도민주당",
-   [
+   ],
+   "group": "naichi",
+   "regions": [
+    "Japan",
+    "Karafuto"
+   ],
+   "note": "社会民主党"
+  },
+  {
+   "name": "중도민주당",
+   "colors": [
     "#9e6d16",
     "#c58b24",
     "#eca932",
     "#f4cb84"
-   ]
-  ],
-  [
-   "평화당",
-   [
+   ],
+   "group": "naichi",
+   "regions": [
+    "Japan",
+    "Karafuto"
+   ],
+   "note": "中道民主党"
+  },
+  {
+   "name": "평화당",
+   "colors": [
     "#924c63",
     "#c06684",
     "#ee80a4",
     "#f5b3c8"
-   ]
-  ],
-  [
-   "무소속",
-   [
+   ],
+   "group": "naichi",
+   "regions": [
+    "Japan",
+    "Karafuto"
+   ],
+   "note": "平和党"
+  },
+  {
+   "name": "무소속",
+   "colors": [
     "#76767e",
     "#b2b2bb",
     "#eeedf8",
     "#f5f4fb"
-   ]
-  ],
-  [
-   "조선헌정당",
-   [
+   ],
+   "group": "naichi",
+   "regions": null
+  },
+  {
+   "name": "조선헌정당",
+   "colors": [
     "#a25052",
     "#d07a7f",
     "#ffa5ac",
     "#ffc9cd"
-   ]
-  ],
-  [
-   "조선자유당",
-   [
+   ],
+   "group": "chosen",
+   "regions": [
+    "Chosen"
+   ],
+   "note": "朝鮮憲政党"
+  },
+  {
+   "name": "조선자유당",
+   "colors": [
     "#2565a3",
     "#4993d1",
     "#6dc1ff",
     "#a7daff"
-   ]
-  ],
-  [
-   "대통일당",
-   [
+   ],
+   "group": "chosen",
+   "regions": [
+    "Chosen"
+   ],
+   "note": "朝鮮自由党"
+  },
+  {
+   "name": "대통일당",
+   "colors": [
     "#9f8f5a",
     "#ccbf96",
     "#faefd3",
     "#fcf5e5"
-   ]
-  ],
-  [
-   "조선개혁협회",
-   [
+   ],
+   "group": "chosen",
+   "regions": [
+    "Chosen"
+   ],
+   "note": "大統一党"
+  },
+  {
+   "name": "조선개혁협회",
+   "colors": [
     "#9ca827",
     "#bbc668",
     "#dae3a9",
     "#e9eecb"
-   ]
-  ],
-  [
-   "대만민주당",
-   [
+   ],
+   "group": "chosen",
+   "regions": [
+    "Chosen"
+   ],
+   "note": "朝鮮改革協会"
+  },
+  {
+   "name": "대만민주당",
+   "colors": [
     "#841386",
     "#b624bc",
     "#e734f3",
     "#f185f8"
-   ]
-  ],
-  [
-   "대만자유당",
-   [
+   ],
+   "group": "taiwan",
+   "regions": [
+    "Taiwan"
+   ],
+   "note": "台湾民主党"
+  },
+  {
+   "name": "대만자유당",
+   "colors": [
     "#40855e",
     "#60b285",
     "#80dfac",
     "#b3eccd"
-   ]
-  ],
-  [
-   "대만협회",
-   [
+   ],
+   "group": "taiwan",
+   "regions": [
+    "Taiwan"
+   ],
+   "note": "台湾自由党"
+  },
+  {
+   "name": "대만협회",
+   "colors": [
     "#556642",
     "#99ac84",
     "#ddf3c6",
     "#ebf8dd"
-   ]
-  ]
+   ],
+   "group": "taiwan",
+   "regions": [
+    "Taiwan"
+   ],
+   "note": "台湾協会"
+  }
  ],
  "defaultSeats": 3,
  "seats": {
@@ -696,5 +763,29 @@
   "입헌민정당",
   "사회대중당",
   "무소속"
+ ],
+ "partyGroups": [
+  {
+   "key": "naichi",
+   "name": "내지 의석",
+   "regions": [
+    "Japan",
+    "Karafuto"
+   ]
+  },
+  {
+   "key": "chosen",
+   "name": "할당 의석 | 조선",
+   "regions": [
+    "Chosen"
+   ]
+  },
+  {
+   "key": "taiwan",
+   "name": "할당 의석 | 대만",
+   "regions": [
+    "Taiwan"
+   ]
+  }
  ]
 }

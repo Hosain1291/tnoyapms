@@ -71,7 +71,7 @@ async function route() {
 }
 
 (async function init() {
-  initModals(); initEditor(); initChart(); initCode(); initExport(); initPres(); initMobile(); initColorPicker(); initOptions(); initTools(); initPresent(); initCustom();
+  initModals(); initEditor(); initChart(); initCode(); initExport(); initPres(); initMobile(); initColorPicker(); initOptions(); initTools(); initPresent(); initCustom(); initPartyManager();
   $('#back').onclick = () => { location.hash = 'menu'; };
   try { await loadMapList(); await loadCustomMaps(); }
   catch (e) { $('#mapGroups').innerHTML = '<div class="hint">지도 목록(maps/index.json)을 불러오지 못했어요.</div>'; return; }

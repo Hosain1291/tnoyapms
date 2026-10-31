@@ -7,7 +7,7 @@ function renderMobileParties(T) {
   const box = $('#mParties'); if (!box) return;
   const chip = (pid, name, color, n) =>
     `<button data-pid="${pid}" class="${store.sel === pid ? 'on' : ''}"><span class="sw" style="background:${color}"></span>${esc(name)} <b>${n}</b></button>`;
-  box.innerHTML = chip('toss', '경합', TOSS, T.toss) + store.parties.map(p => chip(p.id, p.cand && isPres() ? p.cand : p.name, p.colors[0], T.t[p.id])).join('');
+  box.innerHTML = chip('toss', '경합', TOSS, T.toss) + visibleParties().map(p => chip(p.id, p.cand && isPres() ? p.cand : p.name, p.colors[0], T.t[p.id])).join('');
   if (mbId) updMBar();
 }
 
