@@ -23,14 +23,14 @@ const mapEntry = id => MAP_LIST.find(m => m.id === id);
 async function useMap(id) {
   const e = mapEntry(id); if (!e) return false;
   if (MAP && MAP.id === id) return true;
-  MAP = e.meta; MAP_BASE = `maps/${e.folder}/`;
-  let txt = svgCache[id];
+  MAP = e.meta; MAP_BASE = e.folder ? `maps/${e.folder}/` : '';
+  let txt = svgCache[id] || e.svgText;
   if (!txt) { txt = await (await fetch(MAP_BASE + (MAP.svg || 'map.svg'), { cache: 'no-cache' })).text(); svgCache[id] = txt; }
   const doc = new DOMParser().parseFromString(txt, 'image/svg+xml');
   const alias = MAP.regionAlias || {};
   DATA = [...doc.querySelectorAll('path[id]')].map(p => {
     const r = p.getAttribute('data-region') || 'default';
-    return [p.id, alias[r] || r, p.getAttribute('d')];
+    return [p.id, alias[r] || r, p.getAttribute('d'), p.getAttribute('transform') || null];
   });
   ids = DATA.map(d => d[0]);
   region = Object.fromEntries(DATA.map(d => [d[0], d[1]]));

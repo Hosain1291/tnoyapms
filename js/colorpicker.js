@@ -169,12 +169,12 @@ function rasterMap() {
     if (ci) {
       const cg = document.createElementNS(NS, 'g'); cg.setAttribute('fill', 'none'); cg.setAttribute('stroke', '#e6fbfb');
       cg.setAttribute('stroke-width', (2.6 * MAP.width / 1600).toFixed(2)); cg.setAttribute('stroke-linejoin', 'round');
-      DATA.forEach(d => { const p = document.createElementNS(NS, 'path'); p.setAttribute('d', d[2]); cg.appendChild(p); });
+      DATA.forEach(d => { const p = document.createElementNS(NS, 'path'); p.setAttribute('d', d[2]); if (d[3]) p.setAttribute('transform', d[3]); cg.appendChild(p); });
       ci.replaceWith(cg);
     }
     // 화면과 같은 선 색·굵기
     clone.querySelectorAll('#g path').forEach(p => {
-      p.setAttribute('stroke', p.classList.contains('lock') ? '#8fe3e8' : p.classList.contains('ctx') ? '#2c4f55' : '#d86a78');
+      p.setAttribute('stroke', p.classList.contains('lock') ? '#8fe3e8' : p.classList.contains('ctx') ? '#2c4f55' : strokeColor());
       p.setAttribute('stroke-width', (0.6 * vb.w / r.width).toFixed(3)); p.setAttribute('fill-rule', 'evenodd');
       if (p.classList.contains('ctx')) p.setAttribute('fill', CTX_FILL);
     });

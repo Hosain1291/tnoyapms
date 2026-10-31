@@ -3,19 +3,20 @@
 let curView = null, M = null, mapIds = [], inMap = {};
 let mode = 'fill', dragMode = false;
 let undoS = [], redoS = [];
-let els = {}, builtFor = null;
+let els = {}, builtFor = null, labelsBuiltFor = null;
 let svg, g, defs;
 
 /* ---------- 지도 그리기 ---------- */
 function buildMap() {
   if (builtFor === MAP.id) return;
   g.innerHTML = ''; els = {};
-  DATA.forEach(([id, r, d]) => {
+  DATA.forEach(([id, r, d, tf]) => {
     const p = document.createElementNS(NS, 'path');
-    p.setAttribute('d', d); p.dataset.id = id; g.appendChild(p); els[id] = p;
+    p.setAttribute('d', d); if (tf) p.setAttribute('transform', tf); p.dataset.id = id; g.appendChild(p); els[id] = p;
   });
+  labelsBuiltFor = null;
   // 해안선: 흰 테두리를 선거구 아래에 깔아서 바깥쪽 경계만 보이게 해요
-  const s = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${MAP.width} ${MAP.height}" width="${MAP.width}" height="${MAP.height}"><g fill="none" stroke="#e6fbfb" stroke-width="${(2.6 * MAP.width / 1600).toFixed(2)}" stroke-linejoin="round">${DATA.map(d => `<path d="${d[2]}"/>`).join('')}</g></svg>`;
+  const s = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${MAP.width} ${MAP.height}" width="${MAP.width}" height="${MAP.height}"><g fill="none" stroke="#e6fbfb" stroke-width="${(2.6 * MAP.width / 1600).toFixed(2)}" stroke-linejoin="round">${DATA.map(d => `<path d="${d[2]}"${d[3] ? ` transform="${d[3]}"` : ''}/>`).join('')}</g></svg>`;
   $('#coast').setAttribute('href', URL.createObjectURL(new Blob([s], { type: 'image/svg+xml' })));
   $('#coast').setAttribute('width', MAP.width); $('#coast').setAttribute('height', MAP.height);
   builtFor = MAP.id;
@@ -52,8 +53,8 @@ function districtFill(id) {
   return 'url(#' + key + ')';
 }
 function baseDefs() { defs.innerHTML = '<pattern id="offPat" patternUnits="userSpaceOnUse" width="5" height="5" patternTransform="rotate(45)"><rect width="5" height="5" fill="#0a1a1d"/><rect width="1.4" height="5" fill="#24484e"/></pattern>'; }
-function paintOne(id) { const p = els[id]; if (!inMap[id]) return; p.setAttribute('fill', districtFill(id)); const x = M.d[id]; p.classList.toggle('lock', !!(x && x.lock)); }
-function paintAll() { baseDefs(); ids.forEach(id => { if (inMap[id]) paintOne(id); else { els[id].setAttribute('fill', CTX_FILL); els[id].classList.remove('lock'); } }); }
+function paintOne(id) { const p = els[id]; if (!inMap[id]) return; p.setAttribute('fill', districtFill(id)); const x = M.d[id]; p.classList.toggle('lock', !!(x && x.lock)); refreshLabel(id); }
+function paintAll() { labelsDirty = true; scheduleLabels(); baseDefs(); ids.forEach(id => { if (inMap[id]) paintOne(id); else { els[id].setAttribute('fill', CTX_FILL); els[id].classList.remove('lock'); } }); }
 
 /* ---------- 합계 ---------- */
 function totals() {
@@ -97,6 +98,7 @@ function updUndo() { $('#undo').disabled = !undoS.length; $('#redo').disabled = 
 
 /* ---------- 칠하기 ---------- */
 function clickDistrict(id) {
+  if (OPT.lockMap && !(typeof mapPickCb === 'function' && mapPickCb)) { showTip(id); if (isTouchUI()) showMBar(id); toast('지도 잠금 중이에요. 옵션에서 풀 수 있어요.'); return; }
   if (typeof mapPickCb === 'function' && mapPickCb) { mapPickCb(id); return; }  // 색 고르기: 지도에서 고르기
   const x = D(id);
   if (mode === 'disable') { snap(); x.off = !x.off; paintOne(id); refresh(); showTip(id); if (isTouchUI()) showMBar(id); return; }
@@ -112,6 +114,7 @@ function clickDistrict(id) {
   if (isTouchUI()) showMBar(id);
 }
 function dragPaint(id) {
+  if (OPT.lockMap) return;
   const x = D(id); if (x.off || x.lock) return;
   if (store.sel === 'toss') { if (!used(x)) return; x.a = {}; x.m = 0; }
   else { if (owner(id) === store.sel) return; x.a = { [store.sel]: seatsOf(id) }; x.m = 0; }
@@ -127,7 +130,8 @@ function updTag() {
 
 /* ---------- 의석 분할 창 ---------- */
 let spId = null;
-function openSplit(id) { spId = id; renderSplit(); $('#mSplit').classList.add('open'); hideTip(); snap(); }
+function openSplit(id) {
+  if (OPT.lockMap) { toast('지도 잠금 중이에요. 옵션에서 풀 수 있어요.'); return; } spId = id; renderSplit(); $('#mSplit').classList.add('open'); hideTip(); snap(); }
 function renderSplit() {
   const x = D(spId), S = seatsOf(spId), u = used(x);
   $('#mSplitT').textContent = '의석 분할 · ' + nameOf(spId);
@@ -163,7 +167,7 @@ function openParty(pid) {
 
 /* ---------- 확대·이동 ---------- */
 let vb = { x: 0, y: 0, w: 1600, h: 1600 };
-const setVB = () => svg.setAttribute('viewBox', `${vb.x} ${vb.y} ${vb.w} ${vb.h}`);
+const setVB = () => { svg.setAttribute('viewBox', `${vb.x} ${vb.y} ${vb.w} ${vb.h}`); scheduleLabels(); };
 function fitBox(b) {
   const r = svg.getBoundingClientRect(); if (!r.width) return;
   const pad = .05; let w = b.w * (1 + pad * 2), h = b.h * (1 + pad * 2); const ar = r.width / r.height;
@@ -212,7 +216,7 @@ function openView(v) {
   $('#pres').hidden = $('#presFoot').hidden = !isPres(); $('#chartSec').hidden = isPres();
   $('#spSeatLbl').textContent = isPres() ? '이 주의 선거인단 수' : '이 선거구 의석수';
   paintAll(); refresh(); updTag();
-  requestAnimationFrame(() => fitBox(boxOf(v)));
+  requestAnimationFrame(() => { if (labelsBuiltFor !== MAP.id) { buildLabels(); labelsBuiltFor = MAP.id; } fitBox(boxOf(v)); labelsDirty = true; updateLabels(); });
 }
 
 /* ---------- 버튼·마우스·키보드 연결 ---------- */

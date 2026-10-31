@@ -23,14 +23,31 @@ function hemiSeats(N) {
 
 function seatColors(T) {
   const cols = [];
-  store.parties.forEach(p => { T.mg[p.id].forEach((v, i) => { for (let k = 0; k < v; k++) cols.push(p.colors[i]); }); });
+  store.parties.forEach(p => { T.mg[p.id].forEach((v, i) => { for (let k = 0; k < v; k++) cols.push(p.colors[OPT.leans ? i : 0]); }); });
   for (let k = 0; k < T.toss; k++) cols.push(TOSS);
   return cols;
 }
 
 function renderChart(T) {
-  const hs = $('#hemi'), bar = $('#bar');
-  hs.style.display = chart === 'hemi' ? 'block' : 'none'; bar.style.display = chart === 'bar' ? 'flex' : 'none';
+  const hs = $('#hemi'), bar = $('#bar'), pie = $('#pie');
+  hs.style.display = chart === 'hemi' ? 'block' : 'none'; bar.style.display = chart === 'bar' ? 'flex' : 'none'; pie.style.display = chart === 'pie' ? 'block' : 'none';
+  if (chart === 'pie') {
+    // 원 차트: 정당(강도별) → 경합 순서로 조각
+    const segs = []; store.parties.forEach(p => T.mg[p.id].forEach((v, i) => { if (v) segs.push([v, p.colors[OPT.leans ? i : 0]]); }));
+    if (T.toss) segs.push([T.toss, TOSS]);
+    let a0 = -Math.PI / 2, out = '';
+    const R = 1, r0 = .52;
+    segs.forEach(([v, c]) => {
+      const a1 = a0 + v / T.all * Math.PI * 2, big = a1 - a0 > Math.PI ? 1 : 0;
+      if (v === T.all) out += `<circle r="${(R + r0) / 2}" fill="none" stroke="${c}" stroke-width="${R - r0}"/>`;
+      else out += `<path d="M${Math.cos(a0) * R} ${Math.sin(a0) * R}A${R} ${R} 0 ${big} 1 ${Math.cos(a1) * R} ${Math.sin(a1) * R}L${Math.cos(a1) * r0} ${Math.sin(a1) * r0}A${r0} ${r0} 0 ${big} 0 ${Math.cos(a0) * r0} ${Math.sin(a0) * r0}Z" fill="${c}"/>`;
+      a0 = a1;
+    });
+    const mA = -Math.PI / 2 + T.maj / T.all * Math.PI * 2;
+    out += `<line x1="${Math.cos(mA) * (r0 - .05)}" y1="${Math.sin(mA) * (r0 - .05)}" x2="${Math.cos(mA) * (R + .05)}" y2="${Math.sin(mA) * (R + .05)}" stroke="#eaffff" stroke-width=".025"/>`;
+    out += `<text y=".08" text-anchor="middle" font-family="Rajdhani,sans-serif" font-weight="700" font-size=".32" fill="#eaffff">${T.all}</text><text y=".26" text-anchor="middle" font-size=".1" fill="#6f9ea2">과반 ${T.maj}</text>`;
+    pie.innerHTML = out;
+  }
   if (chart === 'hemi') {
     const S = hemiSeats(T.all), cols = seatColors(T);
     hs.innerHTML = S.map((s, i) => `<circle cx="${s.x.toFixed(4)}" cy="${s.y.toFixed(4)}" r="${s.rad.toFixed(4)}" fill="${cols[i] || TOSS}"/>`).join('') +
@@ -39,7 +56,7 @@ function renderChart(T) {
     bar.innerHTML = '';
     store.parties.forEach(p => T.mg[p.id].forEach((v, i) => {
       if (!v) return; const d = document.createElement('div');
-      d.style.width = (v / T.all * 100) + '%'; d.style.background = p.colors[i]; d.title = p.name + ' ' + MARGINS[i] + ' ' + v; bar.appendChild(d);
+      d.style.width = (v / T.all * 100) + '%'; d.style.background = p.colors[OPT.leans ? i : 0]; d.title = p.name + ' ' + MARGINS[i] + ' ' + v; bar.appendChild(d);
     }));
     const m = document.createElement('div'); m.className = 'maj'; m.style.left = (T.maj / T.all * 100) + '%'; bar.appendChild(m);
   }

@@ -14,6 +14,10 @@ js/
   chart.js            의회 구성 차트 (반원 · 막대)
   president.js        대통령 선거 화면 (후보 · 선거인단 막대 · 주별 목록)
   editor.js           칠하기 · 분할 · 비활성 · 잠금 · 되돌리기 · 확대
+  options.js          옵션 (지도 숫자 · 글자 크기·색 · 경계선 · 말풍선 · 차트 강도 · 지도 잠금)
+  labels.js           지도 위 숫자 (의석수 · 미국은 주 약자)
+  tools.js            표 편집 · 발표 모드
+  custom.js           내 지도 (SVG 올려서 칠하기, 브라우저에 저장)
   colorpicker.js      색 고르기 (스포이드 · 이미지에서 · 지도에서)
   export.js           내보내기 (SVG · JSON · PNG) · JSON 불러오기
   app.js              지도 선택 화면 · 시작
@@ -39,3 +43,9 @@ maps/
 ## GitHub Pages
 
 Settings → Pages → Branch `main`, 폴더 `/ (root)` → Save
+
+## YAPms에서 가져온 기능
+
+- 칠하기 단계 순환(확정→유력→우세→경합우세), 분할·비활성·잠금 모드
+- 지도 위 숫자, 옵션 창, 반원·막대·원 차트
+- 표 편집(도구), 발표 모드, 내 지도(Custom SVG)

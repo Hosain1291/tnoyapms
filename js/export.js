@@ -10,20 +10,23 @@ function mapSVG(pad = 20) {
   clone.setAttribute('viewBox', `${b.x - pad / sc} ${b.y - pad / sc} ${b.w + 2 * pad / sc} ${b.h + 2 * pad / sc}`);
   clone.setAttribute('width', W); clone.setAttribute('height', H);
   const ci = clone.querySelector('#coast');
-  if (ci) {
+  if (ci && !OPT.coast) ci.remove();
+  else if (ci) {
     const cg = document.createElementNS(NS, 'g'); cg.setAttribute('fill', 'none'); cg.setAttribute('stroke', '#e6fbfb');
     cg.setAttribute('stroke-width', (2.6 * MAP.width / 1600 / sc).toFixed(2)); cg.setAttribute('stroke-linejoin', 'round');
-    DATA.forEach(d => { const p = document.createElementNS(NS, 'path'); p.setAttribute('d', d[2]); cg.appendChild(p); });
+    DATA.forEach(d => { const p = document.createElementNS(NS, 'path'); p.setAttribute('d', d[2]); if (d[3]) p.setAttribute('transform', d[3]); cg.appendChild(p); });
     ci.replaceWith(cg);
   }
   clone.querySelectorAll('#g path').forEach(p => {
     const id = p.dataset.id;
     p.setAttribute('id', id); p.removeAttribute('data-id');
-    p.setAttribute('stroke', p.classList.contains('lock') ? '#8fe3e8' : (p.classList.contains('ctx') ? '#2c4f55' : '#d86a78'));
-    p.setAttribute('stroke-width', (0.6 * MAP.width / 1600 / sc).toFixed(2)); p.setAttribute('fill-rule', 'evenodd');
+    p.setAttribute('stroke', p.classList.contains('lock') ? '#8fe3e8' : (p.classList.contains('ctx') ? '#2c4f55' : strokeColor()));
+    p.setAttribute('stroke-width', (0.6 * OPT.strokeW * MAP.width / 1600 / sc).toFixed(2)); p.setAttribute('fill-rule', 'evenodd');
     p.removeAttribute('class');
     if (inMap[id]) { const t = document.createElementNS(NS, 'title'); t.textContent = `${nameOf(id)} (${seatsOf(id)})`; p.appendChild(t); }
   });
+  const lg = clone.querySelector('#labels');
+  if (lg) { lg.removeAttribute('id'); if (!OPT.labels) lg.remove(); else { lg.setAttribute('font-family', 'Rajdhani, Arial, sans-serif'); lg.setAttribute('font-weight', '700'); lg.setAttribute('text-anchor', 'middle'); lg.setAttribute('dominant-baseline', 'central'); lg.querySelectorAll('text').forEach(t => { if (t.style.display === 'none') t.remove(); else t.removeAttribute('data-id'); }); } }
   return { str: new XMLSerializer().serializeToString(clone), W, H };
 }
 

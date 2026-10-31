@@ -255,5 +255,6 @@
   "WI": "USA",
   "WY": "USA"
  },
- "tag": "PRESIDENTIAL ELECTION"
+ "tag": "PRESIDENTIAL ELECTION",
+ "labelCode": true
 }

@@ -82,7 +82,7 @@ button:disabled{opacity:.35;cursor:default;box-shadow:none;border-color:var(--li
 main{position:relative;overflow:hidden;display:flex;flex-direction:column}
 #mapWrap{position:relative;flex:1;min-height:0;background-color:var(--sea);background-image:linear-gradient(#0f262b 1px,transparent 1px),linear-gradient(90deg,#0f262b 1px,transparent 1px);background-size:22px 22px}
 #map{width:100%;height:100%;display:block;touch-action:none;cursor:crosshair}
-#map path{stroke:var(--stroke);stroke-width:.6;vector-effect:non-scaling-stroke;fill-rule:evenodd}
+#map path{stroke:var(--stroke);stroke-width:calc(.6 * var(--swm,1));vector-effect:non-scaling-stroke;fill-rule:evenodd}
 #map path.ctx{fill:#0e2125;stroke:#2c4f55;pointer-events:none}
 #map path.lock{stroke:var(--frame);stroke-width:1.4;stroke-dasharray:3 2}
 #map path.hov{stroke:#ffffff;stroke-width:1.8;filter:drop-shadow(0 0 3px #8fe3e8)}
@@ -255,3 +255,48 @@ textarea{width:100%;height:110px;font-family:monospace;font-size:11px}
 .row2{display:flex;gap:6px;margin-top:4px}.row2 button{flex:1}
 .party .nm small{color:var(--mute);font-size:11px;margin-left:4px}
 .cp-sub{width:100%;font-size:10px;color:var(--mute);margin-top:2px}
+
+/* ---------- 지도 숫자 ---------- */
+#labels{pointer-events:none;font-family:'Rajdhani','Orbit',sans-serif;font-weight:700;text-anchor:middle;dominant-baseline:central;paint-order:stroke}
+#labels text{stroke:#00000055;stroke-width:.06em}
+/* ---------- 옵션 ---------- */
+.ogrp{border:1px solid var(--line);padding:8px 10px;margin-bottom:10px}
+.olab{font-family:var(--lat);font-weight:700;letter-spacing:.12em;color:var(--frame);font-size:12px;margin-bottom:6px}
+.orow{display:flex;align-items:center;gap:8px;margin:7px 0;flex-wrap:wrap}
+.orow>span{width:76px;font-size:13px;color:var(--text)}
+.orow input[type=range]{flex:1;accent-color:#8fe3e8}
+.seg{display:flex;flex:1;flex-wrap:wrap;gap:3px}
+.seg button{flex:1;padding:5px 6px;font-size:12px;white-space:nowrap}
+.tog{display:flex;align-items:center;gap:10px;padding:6px 0;cursor:pointer}
+.tog>span{flex:1;display:flex;flex-direction:column}
+.tog b{font-weight:500;font-size:13px}
+.tog small{color:var(--mute);font-size:11px}
+.tog input{display:none}
+.tog i{width:40px;height:22px;border:1px solid var(--line2);border-radius:11px;position:relative;background:#0a1a1d;flex:none;transition:.15s}
+.tog i::after{content:"";position:absolute;left:3px;top:3px;width:14px;height:14px;border-radius:50%;background:var(--mute);transition:.15s}
+.tog input:checked+i{background:#1d5a60;border-color:var(--frame)}
+.tog input:checked+i::after{left:21px;background:#eaffff;box-shadow:0 0 6px var(--frame)}
+body.notip #tip{display:none!important}
+/* ---------- 표 편집 ---------- */
+.tbwrap{max-height:58vh;overflow:auto;border:1px solid var(--line)}
+.tbl{width:100%;border-collapse:collapse;font-size:13px}
+.tbl th{position:sticky;top:0;background:#123238;color:#eaffff;font-weight:500;text-align:left;padding:6px;font-size:12px;z-index:1}
+.tbl td{padding:4px 6px;border-top:1px solid var(--line);vertical-align:middle}
+.tbl td small{display:block;color:var(--mute);font-size:11px}
+.tbl tr.off td{opacity:.45}
+.tbl input[type=number]{width:56px;background:#06100f;border:1px solid var(--line2);color:var(--text);padding:4px;border-radius:2px}
+.tbl select{background:#06100f;border:1px solid var(--line2);color:var(--text);padding:4px;border-radius:2px;max-width:150px}
+.tbl .sw{width:14px;height:14px;border-radius:2px}
+button.sm{padding:3px 8px;font-size:12px}
+/* ---------- 발표 모드 ---------- */
+#presentExit{display:none;position:fixed;right:14px;top:10px;z-index:30}
+body.present #presentExit{display:block}
+body.present #top,body.present #side .sec:not(#chartSec):not(:nth-child(2)),body.present #modeTag,body.present #zoomCtl,body.present #mParties,body.present #mBar{display:none!important}
+body.present #editor{grid-template-rows:1fr}
+body.present #side .party .ed,body.present #side .hint,body.present #side .row2{display:none}
+body.present #chartSec{display:block!important}
+/* ---------- 내 지도 ---------- */
+.upcard .upin{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:30px 16px;text-align:center;color:var(--mute);font-size:12px;line-height:1.6;min-height:150px}
+.upcard .upin b{font-size:44px;color:var(--frame);line-height:1;text-shadow:0 0 12px #8fe3e899}
+.cdel{cursor:pointer}
+.cdel:hover{background:#e06070;color:#fff}

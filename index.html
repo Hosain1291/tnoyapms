@@ -6,7 +6,7 @@
 <title>TNO map</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Orbit&family=IBM+Plex+Sans+KR:wght@400;500;700&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=202610311543">
+<link rel="stylesheet" href="css/style.css?v=202610311555">
 </head>
 <body>
 
@@ -34,6 +34,7 @@
    <button data-mode="lock" title="잠금 (L)">잠금</button>
   </div>
   <div class="grp"><button id="dragBtn" title="누른 채로 끌면 연속으로 칠해요 (Shift를 누른 채 끌어도 돼요)">드래그 칠하기</button></div>
+  <div class="grp"><button id="optBtn">옵션</button><button id="toolsBtn">표 편집</button><button id="presentBtn">발표</button></div>
   <div class="grp"><button id="undo" title="되돌리기 (Ctrl+Z)">↶</button><button id="redo" title="다시 실행 (Ctrl+Y)">↷</button></div>
   <span class="sp"></span>
   <div class="grp">
@@ -45,8 +46,8 @@
  </div></div>
  <aside id="side">
   <div class="sec win" id="chartSec">
-   <h4 class="tb"><span class="t">의회 구성</span><span class="ctog"><button data-c="hemi" class="on">반원</button><button data-c="bar">막대</button></span></h4>
-   <div class="bd" id="chartBox"><svg id="hemi" viewBox="-1.06 -1.06 2.12 1.14"></svg><div id="bar"></div><div id="chartMsg"></div></div>
+   <h4 class="tb"><span class="t">의회 구성</span><span class="ctog"><button data-c="hemi" class="on">반원</button><button data-c="bar">막대</button><button data-c="pie">원</button></span></h4>
+   <div class="bd" id="chartBox"><svg id="hemi" viewBox="-1.06 -1.06 2.12 1.14"></svg><div id="bar"></div><svg id="pie" viewBox="-1.12 -1.12 2.24 2.24" style="display:none"></svg><div id="chartMsg"></div></div>
   </div>
   <div class="sec win">
    <h4 class="tb"><span class="t">정당 · 숫자키로 선택</span><span class="ctl"><i>—</i><i>❐</i><i>✕</i></span></h4><div class="bd">
@@ -75,7 +76,7 @@
    </div>
   </div>
   <div id="mapWrap">
-  <svg id="map" xmlns="http://www.w3.org/2000/svg"><defs id="defs"></defs><image id="coast" x="0" y="0" width="1600" height="1623" style="pointer-events:none"/><g id="g"></g></svg>
+  <svg id="map" xmlns="http://www.w3.org/2000/svg"><defs id="defs"></defs><image id="coast" x="0" y="0" width="1600" height="1623" style="pointer-events:none"/><g id="g"></g><g id="labels"></g></svg>
   <div id="modeTag"></div>
   <div id="zoomCtl"><button id="zin">+</button><button id="zout">−</button><button id="zfit" style="font-size:13px">⤢</button></div>
   <div id="mParties"></div>
@@ -87,6 +88,8 @@
 </div>
 <div id="tip"></div>
 <div class="toast" id="toast"></div>
+<button id="presentExit">발표 끝내기 (Esc)</button>
+<input type="file" id="cuFile" accept=".svg,image/svg+xml" hidden>
 <div id="loading">LOADING MAP…</div>
 
 <div class="modal" id="mSplit"><div class="box win"><div class="tb"><span class="t" id="mSplitT"></span><span class="ctl"><i class="close" style="cursor:pointer">✕</i></span></div><div class="bd">
@@ -154,20 +157,44 @@
  <div id="pdTip" hidden><span id="pdSw"></span><b id="pdHex"></b></div>
 </div>
 
+<div class="modal" id="mOpt"><div class="box win" style="width:min(460px,100%)"><div class="tb"><span class="t">옵션</span><span class="ctl"><i class="close" style="cursor:pointer">✕</i></span></div><div class="bd">
+ <div id="optBody"></div>
+ <div class="foot"><button id="optReset" class="l">기본값으로</button><button class="close on">닫기</button></div>
+</div></div></div>
+
+<div class="modal" id="mTable"><div class="box win" style="width:min(760px,100%)"><div class="tb"><span class="t">표 편집 · 모든 선거구</span><span class="ctl"><i class="close" style="cursor:pointer">✕</i></span></div><div class="bd">
+ <div class="field" style="margin-top:0"><input type="text" id="tbQ" placeholder="선거구 이름·지역 찾기"><span class="hint" id="tbCount" style="margin:0;white-space:nowrap"></span></div>
+ <div class="tbwrap"><table class="tbl"><thead><tr><th></th><th>선거구</th><th>의석</th><th>결과</th><th>강도</th><th title="비활성">끔</th></tr></thead><tbody id="tbBody"></tbody></table></div>
+ <div class="foot"><button class="close on">닫기</button></div>
+</div></div></div>
+
+<div class="modal" id="mCustom"><div class="box win"><div class="tb"><span class="t">내 지도 만들기</span><span class="ctl"><i class="close" style="cursor:pointer">✕</i></span></div><div class="bd">
+ <div class="j" id="cuInfo"></div>
+ <div class="field"><label>지도 이름</label><input type="text" id="cuName"></div>
+ <div class="field"><label>기본 의석수</label><input type="number" id="cuSeats" min="1" max="99" value="1"></div>
+ <div class="field"><label>화면</label><select id="cuLayout"><option value="parliament">의회 선거 (반원 의석도)</option><option value="presidential">대통령 선거 (후보 두 명 · 당선선)</option></select></div>
+ <div class="hint">도형의 id가 선거구 이름이 돼요. 선거구별 의석수는 만든 뒤 '표 편집'에서 한 번에 바꿀 수 있어요.</div>
+ <div class="foot"><button class="close">취소</button><button id="cuSave" class="on">만들기</button></div>
+</div></div></div>
+
 <div class="modal" id="mConfirm"><div class="box win"><div class="tb"><span class="t" id="mConfirmT"></span><span class="ctl"><i class="close" style="cursor:pointer">✕</i></span></div><div class="bd">
  <h3 id="cfT"></h3><div class="j" id="cfJ" style="margin-bottom:0"></div>
  <div class="foot"><button class="close">취소</button><button id="cfOk" class="on">확인</button></div>
 </div></div></div>
 
-<script src="js/util.js?v=202610311543"></script>
-<script src="js/maps.js?v=202610311543"></script>
-<script src="js/store.js?v=202610311543"></script>
-<script src="js/chart.js?v=202610311543"></script>
-<script src="js/editor.js?v=202610311543"></script>
-<script src="js/president.js?v=202610311543"></script>
-<script src="js/mobile.js?v=202610311543"></script>
-<script src="js/colorpicker.js?v=202610311543"></script>
-<script src="js/export.js?v=202610311543"></script>
-<script src="js/app.js?v=202610311543"></script>
+<script src="js/util.js?v=202610311555"></script>
+<script src="js/maps.js?v=202610311555"></script>
+<script src="js/store.js?v=202610311555"></script>
+<script src="js/chart.js?v=202610311555"></script>
+<script src="js/editor.js?v=202610311555"></script>
+<script src="js/president.js?v=202610311555"></script>
+<script src="js/mobile.js?v=202610311555"></script>
+<script src="js/options.js?v=202610311555"></script>
+<script src="js/labels.js?v=202610311555"></script>
+<script src="js/tools.js?v=202610311555"></script>
+<script src="js/custom.js?v=202610311555"></script>
+<script src="js/colorpicker.js?v=202610311555"></script>
+<script src="js/export.js?v=202610311555"></script>
+<script src="js/app.js?v=202610311555"></script>
 </body>
 </html>
