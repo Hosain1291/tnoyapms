@@ -3,11 +3,24 @@
 let store = null;
 const storeKey = mapId => 'tnomap:' + mapId;
 
+/* map.json 의 기본 정당: [이름, 색] 또는 [이름, [확정, 유력, 우세, 경합우세]] */
+function defaultParties(meta) {
+  return meta.parties.map(([n, c], i) => ({ id: 'p' + (i + 1), name: n, cand: (meta.candidates || [])[i] || '', colors: Array.isArray(c) ? c.slice(0, 4) : shades(c) }));
+}
+
+/* 기본 정당 목록으로 바꾸기: 이름이 같은 정당의 칠한 결과는 그대로 옮겨요 */
+function resetParties(s) {
+  const fresh = defaultParties(MAP), byName = Object.fromEntries(fresh.map(p => [p.name, p.id]));
+  const remap = {}; s.parties.forEach(p => { if (byName[p.name]) remap[p.id] = byName[p.name]; });
+  Object.values(s.maps).forEach(mp => { for (const id in mp.d) { const a = mp.d[id].a, na = {}; for (const k in a) if (remap[k]) na[remap[k]] = a[k]; mp.d[id].a = na; } });
+  s.parties = fresh; s.nextId = fresh.length + 1; s.sel = fresh[0] ? fresh[0].id : 'toss';
+}
+
 function freshStore(meta) {
   const seats = {};
   ids.forEach(id => seats[id] = defaultSeat(id));
   return {
-    v: 3, map: meta.id, parties: meta.parties.map(([n, c], i) => ({ id: 'p' + (i + 1), name: n, cand: (meta.candidates || [])[i] || '', colors: shades(c) })),
+    v: 3, map: meta.id, parties: defaultParties(meta),
     seats, maps: {}, nextId: meta.parties.length + 1, sel: 'p1'
   };
 }
@@ -18,6 +31,10 @@ function normalize(s) {
   s.seats = Object.assign(f.seats, s.seats || {});
   s.maps = s.maps || {}; s.nextId = s.nextId || s.parties.length + 1; s.map = MAP.id;
   s.parties.forEach(p => { if (!p.colors || p.colors.length < 4) p.colors = shades(p.color || '#888888'); });
+  // 예전 기본 정당을 아직 그대로 쓰고, 칠한 곳이 하나도 없으면 새 기본 정당으로 바꿔요
+  const old = MAP.oldDefaultParties;
+  if (old && s.parties.map(p => p.name).join('|') === old.join('|') &&
+      !Object.values(s.maps).some(mp => Object.values(mp.d || {}).some(x => Object.values(x.a || {}).some(v => v > 0)))) resetParties(s);
   if (s.sel !== 'toss' && !s.parties.find(p => p.id === s.sel)) s.sel = s.parties[0] ? s.parties[0].id : 'toss';
   return s;
 }

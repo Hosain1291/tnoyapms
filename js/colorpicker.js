@@ -44,7 +44,8 @@ function cpSet(hex) { const c = cpValid(hex); if (!c) return; Object.assign(cp, 
 
 function cpSwatches() {
   const mk = list => list.map(c => `<button class="cpsw" style="background:${c}" data-c="${c}" title="${c}"></button>`).join('');
-  $('#cpPresets').innerHTML = mk(CP_PRESETS);
+  const mapCols = MAP && MAP.parties ? [...new Set(MAP.parties.flatMap(([, c]) => Array.isArray(c) ? c.slice(0, 3) : [c]))] : [];
+  $('#cpPresets').innerHTML = (mapCols.length ? `<div class="cp-sub">이 지도의 기본 정당 색</div>` + mk(mapCols) + `<div class="cp-sub">기타</div>` : '') + mk(CP_PRESETS);
   const r = cpRecent(); $('#cpRecent').innerHTML = r.length ? mk(r) : '<span class="hint" style="margin:0">아직 없어요</span>';
 }
 
@@ -69,7 +70,7 @@ function fillColorOf(id) {
 }
 
 function initColorPicker() {
-  initScreenDropper();
+  initPageDropper();
   cpDrag($('#cpSV'), (x, y) => { cp.s = x; cp.v = 1 - y; cpRender(); });
   cpDrag($('#cpH'), x => { cp.h = Math.min(359.9, x * 360); cpRender(); });
   $('#cpHex').addEventListener('input', () => { const c = cpValid($('#cpHex').value); if (c) { Object.assign(cp, cpHexToHsv(c)); cpRender(); } });
@@ -89,9 +90,8 @@ function initColorPicker() {
       try { const r = await new EyeDropper().open(); cpSet(r.sRGBHex); return; }
       catch (e) { if (e && e.name === 'AbortError') return; }  // 막혀 있으면 아래 화면 캡처 방식으로
     }
-    // 파이어폭스·사파리 등: 화면을 한 장 캡처해서 돋보기로 고르기
-    if (navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia) { screenDropper(); return; }
-    toast('이 기기에서는 화면 스포이드를 쓸 수 없어요. 🖼 이미지에서 고르기를 써 보세요.');
+    // 파이어폭스·사파리·휴대폰: 화면 공유 없이 이 페이지 안에서 바로 고르기
+    pageDropper();
   };
 
   // ② 이미지에서 고르기
@@ -137,52 +137,106 @@ function colorButton(btn, get, set) {
   paint(); return paint;
 }
 
-/* ---------- 화면 캡처 스포이드 (EyeDropper가 없는 브라우저용) ---------- */
-async function screenDropper() {
-  let stream;
-  try { stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false }); }
-  catch (e) {
-    if (e && e.name === 'NotAllowedError') toast('화면 공유를 허용해야 스포이드를 쓸 수 있어요.');
-    else toast('여기서는 화면 캡처가 막혀 있어요. GitHub Pages 주소에서 써 보세요.');
-    return;
+/* ---------- 페이지 스포이드 (EyeDropper가 없는 브라우저용, 화면 공유 없음) ----------
+   지도 위: 지금 보이는 지도를 그림으로 그려 두고 그 픽셀 색을 읽어요 (경계선·해안선까지 정확)
+   그 밖: 마우스 아래 요소의 배경색(정당 색 칸, 추천 색, 버튼 등)을 읽어요 */
+let pd = null;
+
+const rgbToHex = s => { const m = s && s.match(/rgba?\(([^)]+)\)/); if (!m) return null; const v = m[1].split(/[ ,\/]+/).filter(Boolean).map(Number); if (v.length > 3 && v[3] === 0) return null; return toHex(v.slice(0, 3)); };
+
+function elementColor(el) {
+  for (let e = el; e && e !== document.documentElement; e = e.parentElement) {
+    if (e instanceof SVGElement) {
+      const f = e.getAttribute && e.getAttribute('fill');
+      if (f && f.startsWith('#')) return f;
+      const m = f && f.match(/url\(#([^)]+)\)/);
+      if (m) { const r = document.getElementById(m[1]); const rc = r && r.querySelector('rect[fill^="#"]'); if (rc) return rc.getAttribute('fill'); }
+      continue;
+    }
+    const c = rgbToHex(getComputedStyle(e).backgroundColor);
+    if (c) return c;
   }
-  const video = document.createElement('video'); video.muted = true; video.playsInline = true; video.srcObject = stream;
-  try { await video.play(); } catch (e) { }
-  await new Promise(r => { if (video.videoWidth) r(); else video.onloadedmetadata = () => r(); });
-  await new Promise(r => setTimeout(r, 250));   // 공유 안내창이 사라질 시간
-  const cv = $('#sdCanvas'); cv.width = video.videoWidth; cv.height = video.videoHeight;
-  cv.getContext('2d').drawImage(video, 0, 0);
-  stream.getTracks().forEach(tr => tr.stop());
-  const ov = $('#sdOverlay'); ov.hidden = false;
-  $('#sdInfo').textContent = '원하는 곳을 누르세요 · Esc 취소';
+  return rgbToHex(getComputedStyle(document.body).backgroundColor) || '#000000';
 }
 
-function initScreenDropper() {
-  const ov = $('#sdOverlay'), cv = $('#sdCanvas'), lens = $('#sdLens'), lx = lens.getContext('2d');
-  const N = 11, Z = 11;  // 11×11 픽셀을 11배로
-  lens.width = lens.height = N * Z;
-  const at = e => {  // 화면에 맞춰 줄어든(가운데 정렬) 그림 기준 좌표
-    const r = cv.getBoundingClientRect(), s = Math.min(r.width / cv.width, r.height / cv.height);
-    const ox = r.left + (r.width - cv.width * s) / 2, oy = r.top + (r.height - cv.height * s) / 2;
-    return { x: Math.floor((e.clientX - ox) / s), y: Math.floor((e.clientY - oy) / s) };
+function rasterMap() {
+  return new Promise(res => {
+    const r = svg.getBoundingClientRect(); if (!r.width || !$('#editor').classList.contains('open')) return res(null);
+    const dpr = Math.min(2, devicePixelRatio || 1);
+    const clone = svg.cloneNode(true);
+    clone.setAttribute('xmlns', NS); clone.setAttribute('width', r.width); clone.setAttribute('height', r.height);
+    const ci = clone.querySelector('#coast');
+    if (ci) {
+      const cg = document.createElementNS(NS, 'g'); cg.setAttribute('fill', 'none'); cg.setAttribute('stroke', '#e6fbfb');
+      cg.setAttribute('stroke-width', (2.6 * MAP.width / 1600).toFixed(2)); cg.setAttribute('stroke-linejoin', 'round');
+      DATA.forEach(d => { const p = document.createElementNS(NS, 'path'); p.setAttribute('d', d[2]); cg.appendChild(p); });
+      ci.replaceWith(cg);
+    }
+    // 화면과 같은 선 색·굵기
+    clone.querySelectorAll('#g path').forEach(p => {
+      p.setAttribute('stroke', p.classList.contains('lock') ? '#8fe3e8' : p.classList.contains('ctx') ? '#2c4f55' : '#d86a78');
+      p.setAttribute('stroke-width', (0.6 * vb.w / r.width).toFixed(3)); p.setAttribute('fill-rule', 'evenodd');
+      if (p.classList.contains('ctx')) p.setAttribute('fill', CTX_FILL);
+    });
+    const img = new Image();
+    img.onload = () => {
+      const c = document.createElement('canvas'); c.width = Math.round(r.width * dpr); c.height = Math.round(r.height * dpr);
+      const x = c.getContext('2d'); x.fillStyle = '#081619'; x.fillRect(0, 0, c.width, c.height);
+      x.drawImage(img, 0, 0, c.width, c.height); res({ c, r, dpr });
+    };
+    img.onerror = () => res(null);
+    img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(new XMLSerializer().serializeToString(clone));
+  });
+}
+
+async function pageDropper() {
+  const open = $$('.modal.open'); open.forEach(m => m.classList.add('peek'));   // 창은 반투명하게 비켜 두기
+  const ov = $('#pdOverlay'); ov.hidden = false; $('#pdTip').hidden = true;
+  pd = { open, map: null, last: null };
+  pd.map = await rasterMap();
+}
+
+function pdColorAt(x, y, touch) {
+  const ov = $('#pdOverlay');
+  ov.style.pointerEvents = 'none';
+  const el = document.elementFromPoint(x, y);
+  ov.style.pointerEvents = '';
+  // 손가락은 경계선에 걸리기 쉬워서, 터치일 때는 선거구 자체 색을 읽어요
+  if (!touch && pd && pd.map && el && (el === svg || svg.contains(el) || el.closest('#mapWrap')) && !el.closest('button,.modal,#mParties,#mBar,#modeTag')) {
+    const { c, r, dpr } = pd.map;
+    const px = Math.floor((x - r.left) * dpr), py = Math.floor((y - r.top) * dpr);
+    if (px >= 0 && py >= 0 && px < c.width && py < c.height) {
+      const d = c.getContext('2d').getImageData(px, py, 1, 1).data; return toHex([d[0], d[1], d[2]]);
+    }
+  }
+  return el ? elementColor(el) : null;
+}
+
+function pdClose(pickHex) {
+  $('#pdOverlay').hidden = true;
+  if (pd) pd.open.forEach(m => m.classList.remove('peek'));
+  if (pickHex) { cpSet(pickHex); toast('색을 가져왔어요: ' + pickHex); }
+  pd = null;
+}
+
+function initPageDropper() {
+  const ov = $('#pdOverlay'), tip = $('#pdTip');
+  const show = e => {
+    if (!pd) return;
+    const hex = pdColorAt(e.clientX, e.clientY, e.pointerType !== 'mouse'); pd.last = hex; if (!hex) return;
+    tip.hidden = false; $('#pdSw').style.background = hex; $('#pdHex').textContent = hex;
+    const off = e.pointerType === 'touch' ? -70 : 18;   // 손가락에 가리지 않게 위로
+    tip.style.left = Math.min(innerWidth - 120, e.clientX + 16) + 'px';
+    tip.style.top = Math.max(4, Math.min(innerHeight - 40, e.clientY + off)) + 'px';
   };
-  const colorAt = (x, y) => { const d = cv.getContext('2d').getImageData(Math.max(0, Math.min(cv.width - 1, x)), Math.max(0, Math.min(cv.height - 1, y)), 1, 1).data; return toHex([d[0], d[1], d[2]]); };
-  const move = e => {
-    const { x, y } = at(e);
-    lx.imageSmoothingEnabled = false; lx.clearRect(0, 0, lens.width, lens.height);
-    lx.drawImage(cv, x - (N >> 1), y - (N >> 1), N, N, 0, 0, N * Z, N * Z);
-    lx.strokeStyle = '#fff'; lx.lineWidth = 2; lx.strokeRect((N >> 1) * Z, (N >> 1) * Z, Z, Z);
-    const hex = colorAt(x, y);
-    const wrap = $('#sdLensWrap'); wrap.hidden = false;
-    const off = e.pointerType === 'touch' ? -150 : 20;  // 손가락에 가리지 않게
-    wrap.style.left = Math.min(innerWidth - 140, Math.max(4, e.clientX + 20)) + 'px';
-    wrap.style.top = Math.min(innerHeight - 160, Math.max(4, e.clientY + off)) + 'px';
-    $('#sdHex').textContent = hex; $('#sdSw').style.background = hex;
-  };
-  const close = () => { ov.hidden = true; $('#sdLensWrap').hidden = true; };
-  cv.addEventListener('pointermove', move);
-  cv.addEventListener('pointerdown', e => { move(e); });
-  cv.addEventListener('pointerup', e => { const { x, y } = at(e); cpSet(colorAt(x, y)); close(); toast('색을 가져왔어요.'); });
-  $('#sdCancel').onclick = close;
-  addEventListener('keydown', e => { if (e.key === 'Escape' && !ov.hidden) close(); });
+  ov.addEventListener('pointermove', show);
+  ov.addEventListener('pointerdown', show);
+  // 손을 떼면 색을 정하고, 뒤따르는 click까지 이 막(overlay)이 받은 뒤 닫아요 (아래 창이 눌리지 않게)
+  let pend = null, tm = null;
+  ov.addEventListener('pointerup', e => { show(e); pend = pd && pd.last; clearTimeout(tm); tm = setTimeout(() => { if (pd) pdClose(pend); }, 450); });
+  ov.addEventListener('click', e => { e.preventDefault(); e.stopPropagation(); if (pd) { clearTimeout(tm); pdClose(pend || pd.last); } });
+  $('#pdCancel').onclick = e => { e.stopPropagation(); pdClose(null); };
+  $('#pdCancel').addEventListener('pointerup', e => e.stopPropagation());
+  $('#pdCancel').addEventListener('pointerdown', e => e.stopPropagation());
+  addEventListener('keydown', e => { if (e.key === 'Escape' && pd) pdClose(null); });
 }

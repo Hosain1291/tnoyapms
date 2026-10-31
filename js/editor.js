@@ -73,7 +73,8 @@ function renderParties() {
   const T = totals(), box = $('#parties'); box.innerHTML = '';
   const mk = (pid, name, cols, tot, mg, k) => {
     const el = document.createElement('div'); el.className = 'party' + (store.sel === pid ? ' sel' : ''); el.dataset.id = pid;
-    el.innerHTML = `<span class="key">${k}</span><span class="nm">${esc(name)}</span><span class="tot">${tot}</span>` +
+    const note = MAP.partyNotes && MAP.partyNotes[name];
+    el.innerHTML = `<span class="key">${k}</span><span class="nm">${esc(name)}${note ? `<small>${esc(note)}</small>` : ''}</span><span class="tot">${tot}</span>` +
       (pid === 'toss' ? '<span></span>' : '<button class="ed" title="정당 편집">✎</button>') +
       (mg ? `<div class="mg">${mg.map((v, i) => `<span style="background:${cols[i]};color:${lum(cols[i]) > 140 ? '#111' : '#f4ffff'}" title="${MARGINS[i]}">${v}</span>`).join('')}</div>`
         : `<div class="mg"><span style="background:${TOSS};color:#d3f1f2">미정</span></div>`);
@@ -271,6 +272,9 @@ function initEditor() {
       undoS = []; redoS = []; paintAll(); refresh(); updTag();
     });
   };
+  $('#resetParties').onclick = () => confirmBox('기본 정당으로', `정당 목록을 이 지도의 기본 정당(${MAP.parties.length}개)으로 바꿔요. 이름이 같은 정당이 칠한 곳은 그대로 남고, 나머지는 경합으로 돌아가요.`, () => {
+    snap(); resetParties(store); undoS = []; redoS = []; paintAll(); refresh(); updTag();
+  });
   $('#addParty').onclick = () => {
     const pal = ['#8e5bd0', '#2aa6ad', '#c9b02c', '#d14d82', '#9b6b45', '#3e9c84', '#86a83a', '#5a62c9'];
     const id = 'p' + (store.nextId++);
