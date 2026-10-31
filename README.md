@@ -14,7 +14,7 @@ js/
   chart.js            의회 구성 차트 (반원 · 막대)
   president.js        대통령 선거 화면 (후보 · 선거인단 막대 · 주별 목록)
   editor.js           칠하기 · 분할 · 비활성 · 잠금 · 되돌리기 · 확대
-  export.js           지도 이미지 만들기
+  export.js           내보내기 (SVG · JSON · PNG) · JSON 불러오기
   app.js              지도 선택 화면 · 시작
 maps/
   index.json          지도 목록

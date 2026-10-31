@@ -204,3 +204,9 @@ textarea{width:100%;height:110px;font-family:monospace;font-size:11px}
  .card.big{grid-column:span 1}
  #menu{padding:16px 3vw}
 }
+
+.exrow{display:flex;align-items:center;gap:8px;padding:9px 0;border-bottom:1px solid var(--line)}
+.exrow>div{flex:1;display:flex;flex-direction:column;min-width:0}
+.exrow b{color:#eaffff;font-family:var(--lat);font-size:16px;letter-spacing:.04em}
+.exrow span{color:var(--mute);font-size:12px}
+.exrow button{flex:none}
