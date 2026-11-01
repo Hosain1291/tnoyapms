@@ -43,7 +43,7 @@ function renderPres(T) {
   const lab2 = MAP.labels || {};
   list.innerHTML = [...mapIds].sort((a, b) => (lab2[a] || a).localeCompare(lab2[b] || b)).map(id => {
     const x = M.d[id], wp = winnerOf(id), p = wp && party(wp);
-    const col = x && x.off ? '#3a5a60' : p ? p.colors[x.m || 0] : 'var(--text)';
+    const col = x && x.off ? '#3a5a60' : p ? p.colors[mOf(x, wp)] : 'var(--text)';
     return `<div data-id="${id}" style="color:${col}"><span>${esc(lab2[id] || nameOf(id))}</span><b>${seatsOf(id)}</b></div>`;
   }).join('');
 

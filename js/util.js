@@ -4,7 +4,9 @@ const $$ = s => [...document.querySelectorAll(s)];
 const NS = 'http://www.w3.org/2000/svg';
 
 const MARGINS = ['확정', '유력', '우세', '경합우세'];
-const TOSS = '#1d3a40';          // 경합·미정 색
+const TOSS = '#1d3a40';
+/* 선거구 x 안에서 정당 k의 강도 (정당별 강도가 있으면 그것, 없으면 선거구 강도) */
+const mOf = (x, k) => (x && x.pm && x.pm[k] != null) ? x.pm[k] : ((x && x.m) || 0);          // 경합·미정 색
 const CTX_FILL = '#0e2125';      // 다른 지역(보기 밖) 색
 
 const hexRgb = h => { h = h.replace('#', ''); return [0, 2, 4].map(i => parseInt(h.substr(i, 2), 16)); };

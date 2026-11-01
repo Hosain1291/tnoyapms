@@ -321,3 +321,10 @@ body.present #chartSec{display:block!important}
 .pm-del{flex:none;padding:4px 9px;color:var(--mute)}
 .pm-del:hover{color:#fff;background:#a3262a}
 #tip .tnote{color:var(--mute);font-size:11px;line-height:1.45;margin:3px 0 2px;max-width:230px}
+
+/* 정당별 강도 */
+.party .mg span{cursor:pointer;transition:transform .1s,box-shadow .1s}
+.party .mg span:hover{transform:translateY(-1px);box-shadow:0 0 0 1px #eaffff88}
+.party .mg span.msel{box-shadow:0 0 0 2px #eaffff,0 0 8px #8fe3e8;transform:scale(1.04);position:relative;z-index:1}
+.pmsel{background:#06100f;border:1px solid var(--line2);color:var(--text);padding:3px 2px;border-radius:2px;font-size:12px;width:78px}
+.pmsel-sp{width:78px;display:inline-block}

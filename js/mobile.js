@@ -16,7 +16,7 @@ function hideMBar() { mbId = null; $('#mBar').hidden = true; }
 function updMBar() {
   const id = mbId; if (!id || !M) return;
   const x = M.d[id] || { a: {} }, S = seatsOf(id);
-  const parts = store.parties.filter(p => x.a[p.id]).map(p => `${p.name} ${x.a[p.id]}`);
+  const parts = store.parties.filter(p => x.a[p.id]).map(p => `${p.name} ${x.a[p.id]}(${MARGINS[mOf(x, p.id)]})`);
   const u = Object.values(x.a).reduce((a, b) => a + b, 0);
   if (u < S) parts.push(`경합 ${S - u}`);
   $('#mbName').textContent = nameOf(id);
@@ -26,7 +26,7 @@ function updMBar() {
 function initMobile() {
   $('#mParties').addEventListener('click', e => {
     const b = e.target.closest('[data-pid]'); if (!b) return;
-    store.sel = b.dataset.pid; refresh(); updTag();
+    store.sel = b.dataset.pid; selM = null; refresh(); updTag();
   });
   $('#mbSplit').onclick = () => {
     const x = D(mbId); if (x.off || x.lock) { toast('비활성이거나 잠긴 선거구예요.'); return; }
@@ -34,7 +34,7 @@ function initMobile() {
   };
   $('#mbClear').onclick = () => {
     const x = D(mbId); if (x.lock) { toast('잠긴 선거구예요.'); return; }
-    snap(); x.a = {}; x.m = 0; paintOne(mbId); refresh();
+    snap(); x.a = {}; x.m = 0; delete x.pm; paintOne(mbId); refresh();
   };
   $('#mbClose').onclick = hideMBar;
   // 분할 창을 닫으면 아래 막대도 새로 고침

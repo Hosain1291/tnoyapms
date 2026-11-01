@@ -2,6 +2,7 @@
 
 let curView = null, M = null, mapIds = [], inMap = {};
 let mode = 'fill', dragMode = false;
+let selM = null;   // 정당 칸에서 고른 강도 (null이면 누를 때마다 단계 순환)
 let undoS = [], redoS = [];
 let els = {}, builtFor = null, labelsBuiltFor = null;
 let svg, g, defs;
@@ -38,9 +39,9 @@ function districtFill(id) {
   const es = Object.entries(x.a).filter(([k, v]) => v > 0 && party(k));
   if (!es.length) return TOSS;
   const tot = seatsOf(id), u = es.reduce((s, [, v]) => s + v, 0);
-  if (es.length === 1 && u >= tot) return party(es[0][0]).colors[x.m || 0];
+  if (es.length === 1 && u >= tot) return party(es[0][0]).colors[mOf(x, es[0][0])];
   es.sort((a, b) => b[1] - a[1]);
-  const parts = es.map(([k, v]) => [party(k).colors[x.m || 0], v]); if (u < tot) parts.push([TOSS, tot - u]);
+  const parts = es.map(([k, v]) => [party(k).colors[mOf(x, k)], v]); if (u < tot) parts.push([TOSS, tot - u]);
   const key = 'st' + parts.map(([c, v]) => c.slice(1) + '_' + v).join('-');
   if (!document.getElementById(key)) {
     const W = 7, T = parts.reduce((s, [, v]) => s + v, 0);
@@ -63,7 +64,7 @@ function totals() {
   mapIds.forEach(id => {
     const x = M.d[id]; if (x && x.off) return;
     const s = seatsOf(id); all += s; let u = 0;
-    if (x) for (const k in x.a) if (t[k] !== undefined && x.a[k] > 0) { const v = Math.min(x.a[k], s - u); t[k] += v; mg[k][x.m || 0] += v; u += v; }
+    if (x) for (const k in x.a) if (t[k] !== undefined && x.a[k] > 0) { const v = Math.min(x.a[k], s - u); t[k] += v; mg[k][mOf(x, k)] += v; u += v; }
     toss += s - u;
   });
   return { t, mg, all, toss, maj: Math.floor(all / 2) + 1 };
@@ -77,9 +78,15 @@ function renderParties() {
     const pp = party(pid), note = (pp && pp.note) || (MAP.partyNotes && MAP.partyNotes[name]);
     el.innerHTML = `<span class="key">${k}</span><span class="nm">${esc(name)}${note ? `<small>${esc(note)}</small>` : ''}</span><span class="tot">${tot}</span>` +
       (pid === 'toss' ? '<span></span>' : '<button class="ed" title="정당 편집">✎</button>') +
-      (mg ? `<div class="mg">${mg.map((v, i) => `<span style="background:${cols[i]};color:${lum(cols[i]) > 140 ? '#111' : '#f4ffff'}" title="${MARGINS[i]}">${v}</span>`).join('')}</div>`
+      (mg ? `<div class="mg">${mg.map((v, i) => `<span data-m="${i}" class="${store.sel === pid && selM === i ? 'msel' : ''}" style="background:${cols[i]};color:${lum(cols[i]) > 140 ? '#111' : '#f4ffff'}" title="${MARGINS[i]}로 칠하기">${v}</span>`).join('')}</div>`
         : `<div class="mg"><span style="background:${TOSS};color:#d3f1f2">미정</span></div>`);
-    el.onclick = e => { if (e.target.classList.contains('ed')) { openParty(pid); return; } store.sel = pid; save(); renderParties(); updTag(); };
+    el.onclick = e => {
+      if (e.target.classList.contains('ed')) { openParty(pid); return; }
+      const mc = e.target.closest('[data-m]');
+      if (mc && pid !== 'toss') { const m = +mc.dataset.m; selM = (store.sel === pid && selM === m) ? null : m; }   // 강도 칸: 그 강도로 칠하기 (한 번 더 누르면 해제)
+      else selM = null;
+      store.sel = pid; save(); renderParties(); updTag();
+    };
     box.appendChild(el);
   };
   mk('toss', '경합 · 미정', null, T.toss, null, '0');
@@ -115,9 +122,10 @@ function clickDistrict(id) {
   if (mode === 'split') { openSplit(id); return; }
   snap();
   if (store.sel !== 'toss' && !allowedIn(party(store.sel), id)) { cantRunMsg(party(store.sel), id); return; }
-  if (store.sel === 'toss') { x.a = {}; x.m = 0; }
-  else if (owner(id) === store.sel) { x.m = ((x.m || 0) + 1) % 4; }   // 같은 정당이면 단계 순환
-  else { x.a = { [store.sel]: seatsOf(id) }; x.m = 0; }
+  if (store.sel === 'toss') { x.a = {}; x.m = 0; delete x.pm; }
+  else if (selM != null) { x.a = { [store.sel]: seatsOf(id) }; x.m = selM; delete x.pm; }   // 정당 칸에서 고른 강도로
+  else if (owner(id) === store.sel) { x.m = ((x.m || 0) + 1) % 4; delete x.pm; }   // 같은 정당이면 단계 순환
+  else { x.a = { [store.sel]: seatsOf(id) }; x.m = 0; delete x.pm; }
   paintOne(id); refresh(); showTip(id);
   if (isTouchUI()) showMBar(id);
 }
@@ -125,8 +133,8 @@ function dragPaint(id) {
   if (OPT.lockMap) return;
   const x = D(id); if (x.off || x.lock) return;
   if (store.sel !== 'toss' && !allowedIn(party(store.sel), id)) return;
-  if (store.sel === 'toss') { if (!used(x)) return; x.a = {}; x.m = 0; }
-  else { if (owner(id) === store.sel) return; x.a = { [store.sel]: seatsOf(id) }; x.m = 0; }
+  if (store.sel === 'toss') { if (!used(x)) return; x.a = {}; x.m = 0; delete x.pm; }
+  else { const m = selM != null ? selM : 0; if (owner(id) === store.sel && mOf(x, store.sel) === m) return; x.a = { [store.sel]: seatsOf(id) }; x.m = m; delete x.pm; }
   paintOne(id);
 }
 
@@ -134,7 +142,7 @@ const MODE_KO = { fill: '칠하기', split: '의석 분할', disable: '비활성
 function setMode(m) { mode = m; $$('#modes button').forEach(x => x.classList.toggle('on', x.dataset.mode === m)); updTag(); }
 function updTag() {
   const p = store.sel === 'toss' ? '경합' : (party(store.sel) || {}).name;
-  $('#modeTag').innerHTML = `모드 <b>${MODE_KO[mode]}</b>` + (mode === 'fill' ? ` · ${esc(p)}` + (dragMode ? ' · 드래그' : '') : '');
+  $('#modeTag').innerHTML = `모드 <b>${MODE_KO[mode]}</b>` + (mode === 'fill' ? ` · ${esc(p)}` + (store.sel !== 'toss' ? ` · ${selM != null ? MARGINS[selM] + ' 고정' : '단계 순환'}` : '') + (dragMode ? ' · 드래그' : '') : '');
 }
 
 /* ---------- 의석 분할 창 ---------- */
@@ -146,10 +154,11 @@ function renderSplit() {
   $('#mSplitT').textContent = '의석 분할 · ' + nameOf(spId);
   $('#spJ').textContent = spId + ' · ' + regionName(region[spId]);
   $('#spSeats').textContent = S; $('#spMargin').value = x.m || 0;
+  const msel = pid => `<select class="pmsel" data-pid="${pid}" title="이 정당의 강도">${MARGINS.map((m, i) => `<option value="${i}"${mOf(x, pid) === i ? ' selected' : ''}>${m}</option>`).join('')}</select>`;
   const L = $('#spList'); L.innerHTML = '';
   store.parties.filter(p => allowedIn(p, spId) || x.a[p.id]).forEach(p => {
     const v = x.a[p.id] || 0; const r = document.createElement('div'); r.className = 'alloc';
-    r.innerHTML = `<span class="sw" style="background:${p.colors[0]}"></span><span class="n">${esc(p.name)}</span><button>−</button><span class="v">${v}</span><button>+</button>`;
+    r.innerHTML = `<span class="sw" style="background:${p.colors[mOf(x, p.id)]}"></span><span class="n">${esc(p.name)}</span>${v ? msel(p.id) : '<span class="pmsel-sp"></span>'}<button>−</button><span class="v">${v}</span><button>+</button>`;
     const [mi, pl] = r.querySelectorAll('button');
     mi.onclick = () => { if (v > 0) { x.a[p.id] = v - 1; if (!x.a[p.id]) delete x.a[p.id]; spUpd(); } };
     pl.onclick = () => { if (u < S) { x.a[p.id] = v + 1; spUpd(); } };
@@ -202,7 +211,7 @@ function showTip(id, cx, cy) {
   let h = `<div><span class="t">${esc(nameOf(id))}</span><span class="j">${id}</span></div><div style="color:var(--mute);font-size:12px">${esc(regionName(region[id]))} · ${isPres() ? '선거인단 ' + S : S + '석'}${x.off ? ' · 비활성' : ''}${x.lock ? ' · 잠김' : ''}</div>` + (MAP.seatNotes && MAP.seatNotes[id] ? `<div class="tnote">${esc(MAP.seatNotes[id])}</div>` : '');
   if (!x.off) {
     let u = 0;
-    store.parties.forEach(p => { const v = x.a[p.id]; if (v) { u += v; h += `<div class="l"><span class="sw" style="background:${p.colors[x.m || 0]}"></span>${esc(p.name)} <span style="color:var(--mute);font-size:11px">${MARGINS[x.m || 0]}</span><b style="margin-left:auto">${v}</b></div>`; } });
+    store.parties.forEach(p => { const v = x.a[p.id]; if (v) { u += v; h += `<div class="l"><span class="sw" style="background:${p.colors[mOf(x, p.id)]}"></span>${esc(p.name)} <span style="color:var(--mute);font-size:11px">${MARGINS[mOf(x, p.id)]}</span><b style="margin-left:auto">${v}</b></div>`; } });
     if (u < S) h += `<div class="l" style="color:var(--mute)"><span class="sw" style="background:${TOSS}"></span>경합 <b style="margin-left:auto">${S - u}</b></div>`;
   }
   tip.innerHTML = h; tip.style.display = 'block';
@@ -240,7 +249,7 @@ function initEditor() {
     if (store.sel === 'toss') { toast('먼저 정당을 고르세요.'); return; }
     const p = party(store.sel);
     confirmBox('남은 곳 채우기', `아직 칠하지 않은 선거구를 모두 '${p.name}' 확정으로 칠해요.`, () => {
-      snap(); mapIds.forEach(id => { const x = D(id); if (x.off || x.lock || used(x) || !allowedIn(p, id)) return; x.a = { [p.id]: seatsOf(id) }; x.m = 0; });
+      snap(); mapIds.forEach(id => { const x = D(id); if (x.off || x.lock || used(x) || !allowedIn(p, id)) return; x.a = { [p.id]: seatsOf(id) }; x.m = selM != null ? selM : 0; delete x.pm; });
       paintAll(); refresh();
     });
   };
@@ -256,7 +265,13 @@ function initEditor() {
   });
 
   // 분할 창
-  $('#spMargin').onchange = () => { D(spId).m = +$('#spMargin').value; spUpd(); };
+  // 모두 같은 강도로
+  $('#spMargin').onchange = () => { const x = D(spId); x.m = +$('#spMargin').value; delete x.pm; spUpd(); };
+  // 정당별 강도
+  $('#spList').addEventListener('change', e => {
+    const s = e.target.closest('.pmsel'); if (!s) return;
+    const x = D(spId); x.pm = x.pm || {}; x.pm[s.dataset.pid] = +s.value; spUpd();
+  });
   $$('#mSplit [data-seat]').forEach(b => b.onclick = () => {
     const old = seatsOf(spId), n = Math.max(1, Math.min(30, old + +b.dataset.seat)); if (n === old) return;
     store.seats[spId] = n;
@@ -365,7 +380,8 @@ function initEditor() {
     if (e.ctrlKey || e.metaKey || e.altKey) return;
     const k = e.key.toLowerCase();
     if (k === 'f') setMode('fill'); else if (k === 's') setMode('split'); else if (k === 'd') setMode('disable'); else if (k === 'l') setMode('lock');
-    else if (k === '0' || k === '`') { store.sel = 'toss'; refresh(); updTag(); }
-    else if (/^[1-9]$/.test(k)) { const p = visibleParties()[+k - 1]; if (p) { store.sel = p.id; refresh(); updTag(); } }
+    else if (k === '0' || k === '`') { store.sel = 'toss'; selM = null; refresh(); updTag(); }
+    else if (/^[1-9]$/.test(k)) { const p = visibleParties()[+k - 1]; if (p) { if (store.sel === p.id && e.shiftKey) selM = selM == null ? 0 : (selM + 1) % 4; else if (store.sel !== p.id) selM = null; store.sel = p.id; refresh(); updTag(); } }
+    else if (['q', 'w', 'e', 'r'].includes(k) && store.sel !== 'toss') { const m = 'qwer'.indexOf(k); selM = selM === m ? null : m; refresh(); updTag(); }
   });
 }

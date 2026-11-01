@@ -35,12 +35,12 @@ function resultJSON() {
   const T = totals();
   const districts = mapIds.map(id => {
     const x = M.d[id] || { a: {} };
-    const alloc = {}; store.parties.forEach(p => { if (x.a[p.id]) alloc[p.name] = x.a[p.id]; });
+    const alloc = {}, margins = {}; store.parties.forEach(p => { if (x.a[p.id]) { alloc[p.name] = x.a[p.id]; margins[p.name] = MARGINS[mOf(x, p.id)]; } });
     const u = Object.values(x.a).reduce((a, b) => a + b, 0);
     const w = isPres() ? winnerOf(id) : owner(id);
     return {
       id, name: nameOf(id), region: regionName(region[id]), seats: seatsOf(id),
-      result: alloc, tossup: Math.max(0, seatsOf(id) - u), margin: u ? MARGINS[x.m || 0] : null,
+      result: alloc, tossup: Math.max(0, seatsOf(id) - u), margin: u ? margins : null,
       winner: w ? party(w).name : null, disabled: !!x.off, locked: !!x.lock
     };
   });

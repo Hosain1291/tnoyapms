@@ -9,13 +9,13 @@ function renderTable() {
       const x = M.d[id] || { a: {} }, ks = Object.keys(x.a).filter(k => x.a[k] > 0 && party(k));
       const split = ks.length > 1 || (ks.length === 1 && x.a[ks[0]] < seatsOf(id));
       const sel = ks.length === 1 && !split ? ks[0] : 'toss';
-      const col = ks.length ? party(ks.sort((a, b) => x.a[b] - x.a[a])[0]).colors[x.m || 0] : TOSS;
+      const top = ks.length ? ks.sort((a, b) => x.a[b] - x.a[a])[0] : null, col = top ? party(top).colors[mOf(x, top)] : TOSS;
       return `<tr data-id="${esc(id)}" class="${x.off ? 'off' : ''}">
         <td><span class="sw" style="background:${col}"></span></td>
         <td><b>${esc(nameOf(id))}</b><small>${esc(id)} · ${esc(regionName(region[id]))}</small></td>
         <td><input type="number" min="1" max="99" value="${seatsOf(id)}" data-f="seats"></td>
         <td>${split ? `<button data-f="split" class="sm">분할됨 ✎</button>` : `<select data-f="win">${opts(sel, id)}</select>`}</td>
-        <td><select data-f="m">${MARGINS.map((m, i) => `<option value="${i}"${(x.m || 0) === i ? ' selected' : ''}>${m}</option>`).join('')}</select></td>
+        <td><select data-f="m">${MARGINS.map((m, i) => `<option value="${i}"${(top ? mOf(x, top) : (x.m || 0)) === i ? ' selected' : ''}>${m}</option>`).join('')}</select></td>
         <td><input type="checkbox" data-f="off" ${x.off ? 'checked' : ''} title="비활성"></td>
       </tr>`;
     }).join('');
@@ -37,8 +37,8 @@ function initTools() {
       if (ks.length === 1 && x.a[ks[0]] >= old) x.a[ks[0]] = n; else if (used(x) > n) x.a = {};
       labelsDirty = true; scheduleLabels();
     } else if (f === 'win') {
-      const v = e.target.value; x.a = v === 'toss' ? {} : { [v]: seatsOf(id) };
-    } else if (f === 'm') x.m = +e.target.value;
+      const v = e.target.value; x.a = v === 'toss' ? {} : { [v]: seatsOf(id) }; delete x.pm;
+    } else if (f === 'm') { x.m = +e.target.value; delete x.pm; }
     else if (f === 'off') x.off = e.target.checked;
     paintOne(id); refresh(); renderTable();
   });

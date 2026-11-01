@@ -6,7 +6,7 @@
 <title>TNO map</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Orbit&family=IBM+Plex+Sans+KR:wght@400;500;700&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=202611012017">
+<link rel="stylesheet" href="css/style.css?v=202611012022">
 </head>
 <body>
 
@@ -53,7 +53,7 @@
    <h4 class="tb"><span class="t">정당 · 숫자키로 선택</span><button id="pmBtn" class="tbbtn">정당 관리</button></h4><div class="bd">
    <div id="parties"></div>
    <div class="row2"><button id="addParty">+ 정당 추가</button><button id="resetParties">기본 정당으로</button></div>
-   <div class="hint">선택한 정당으로 선거구를 누르면 <b>확정</b>으로 칠해지고, 다시 누를 때마다 <b>확정 → 유력 → 우세 → 경합우세</b> 순으로 바뀌어요. <b>경합</b>을 골라 누르면 비워져요.</div>
+   <div class="hint">선택한 정당으로 선거구를 누르면 <b>확정</b>으로 칠해지고, 다시 누를 때마다 <b>확정 → 유력 → 우세 → 경합우세</b> 순으로 바뀌어요. 정당 아래 <b>강도 칸</b>을 누르면 그 강도로만 칠해져요(다시 누르면 해제). <b>경합</b>을 골라 누르면 비워져요.</div>
   </div></div>
   <div class="sec win">
    <h4 class="tb"><span class="t">의석수</span><span class="ctl"><i>—</i><i>❐</i><i>✕</i></span></h4><div class="bd">
@@ -63,7 +63,7 @@
   </div></div>
   <div class="sec win"><h4 class="tb"><span class="t">단축키</span><span class="ctl"><i>—</i><i>❐</i><i>✕</i></span></h4><div class="bd hint" style="margin:0">
    <span class="kbd">F</span> 칠하기 · <span class="kbd">S</span> 분할 · <span class="kbd">D</span> 비활성 · <span class="kbd">L</span> 잠금<br>
-   <span class="kbd">1~9</span> 정당 선택 · <span class="kbd">0</span> 경합 · <span class="kbd">Ctrl+Z</span> 되돌리기<br>
+   <span class="kbd">1~9</span> 정당 선택 · <span class="kbd">0</span> 경합 · <span class="kbd">Q W E R</span> 강도 고정 · <span class="kbd">Ctrl+Z</span> 되돌리기<br>
    비활성 선거구는 의석 합계에서 빠지고, 잠긴 선거구는 칠해지지 않아요.
   </div></div>
  </aside>
@@ -96,7 +96,7 @@
  <h3 id="spTitle"></h3><div class="j" id="spJ"></div>
  <div class="alloc" style="border-bottom:1px solid var(--line);padding-bottom:10px;margin-bottom:10px"><span class="n"><b id="spSeatLbl">이 선거구 의석수</b></span><button data-seat="-1">−</button><span class="v" id="spSeats"></span><button data-seat="1">+</button></div>
  <div id="spList"></div>
- <div class="field"><label>강도</label><select id="spMargin" style="flex:1;background:#0c0b08;border:1px solid var(--line2);padding:5px"><option value="0">확정</option><option value="1">유력</option><option value="2">우세</option><option value="3">경합우세</option></select></div>
+ <div class="field"><label style="width:auto">모두 같은 강도</label><select id="spMargin" style="flex:1;background:#0c0b08;border:1px solid var(--line2);padding:5px"><option value="0">확정</option><option value="1">유력</option><option value="2">우세</option><option value="3">경합우세</option></select></div>
  <div class="hint" id="spLeft"></div>
  <div class="foot"><button id="spClear" class="l">비우기</button><button class="close on">완료</button></div>
 </div></div></div>
@@ -196,20 +196,20 @@
  <div class="foot"><button class="close">취소</button><button id="cfOk" class="on">확인</button></div>
 </div></div></div>
 
-<script src="js/util.js?v=202611012017"></script>
-<script src="js/maps.js?v=202611012017"></script>
-<script src="js/store.js?v=202611012017"></script>
-<script src="js/chart.js?v=202611012017"></script>
-<script src="js/editor.js?v=202611012017"></script>
-<script src="js/president.js?v=202611012017"></script>
-<script src="js/mobile.js?v=202611012017"></script>
-<script src="js/parties.js?v=202611012017"></script>
-<script src="js/options.js?v=202611012017"></script>
-<script src="js/labels.js?v=202611012017"></script>
-<script src="js/tools.js?v=202611012017"></script>
-<script src="js/custom.js?v=202611012017"></script>
-<script src="js/colorpicker.js?v=202611012017"></script>
-<script src="js/export.js?v=202611012017"></script>
-<script src="js/app.js?v=202611012017"></script>
+<script src="js/util.js?v=202611012022"></script>
+<script src="js/maps.js?v=202611012022"></script>
+<script src="js/store.js?v=202611012022"></script>
+<script src="js/chart.js?v=202611012022"></script>
+<script src="js/editor.js?v=202611012022"></script>
+<script src="js/president.js?v=202611012022"></script>
+<script src="js/mobile.js?v=202611012022"></script>
+<script src="js/parties.js?v=202611012022"></script>
+<script src="js/options.js?v=202611012022"></script>
+<script src="js/labels.js?v=202611012022"></script>
+<script src="js/tools.js?v=202611012022"></script>
+<script src="js/custom.js?v=202611012022"></script>
+<script src="js/colorpicker.js?v=202611012022"></script>
+<script src="js/export.js?v=202611012022"></script>
+<script src="js/app.js?v=202611012022"></script>
 </body>
 </html>
