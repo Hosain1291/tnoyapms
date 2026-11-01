@@ -38,10 +38,15 @@ function districtFill(id) {
   if (!x) return TOSS;
   const es = Object.entries(x.a).filter(([k, v]) => v > 0 && party(k));
   if (!es.length) return TOSS;
-  const tot = seatsOf(id), u = es.reduce((s, [, v]) => s + v, 0);
-  if (es.length === 1 && u >= tot) return party(es[0][0]).colors[mOf(x, es[0][0])];
-  es.sort((a, b) => b[1] - a[1]);
-  const parts = es.map(([k, v]) => [party(k).colors[mOf(x, k)], v]); if (u < tot) parts.push([TOSS, tot - u]);
+  const tot = seatsOf(id), u = es.reduce((s, [, v]) => s + v, 0), toss = Math.max(0, tot - u);
+  // 1등이 한 정당이면 그 정당 색으로 통합 (예: 4:2 → 4석 정당 색)
+  // 1등이 동률이면 동률인 정당끼리 줄무늬 (예: 3:3), 미정 의석이 1등과 같으면 미정도 줄무늬에 넣기
+  const top = Math.max(...es.map(([, v]) => v));
+  const tied = es.filter(([, v]) => v === top);
+  if (tied.length === 1 && toss < top) return party(tied[0][0]).colors[mOf(x, tied[0][0])];
+  let parts;
+  if (toss > top) { es.sort((a, b) => b[1] - a[1]); parts = es.map(([k, v]) => [party(k).colors[mOf(x, k)], v]); parts.push([TOSS, toss]); }  // 대부분 미정: 정해진 만큼만 비율로
+  else { parts = tied.map(([k]) => [party(k).colors[mOf(x, k)], 1]); if (toss === top) parts.push([TOSS, 1]); }
   const key = 'st' + parts.map(([c, v]) => c.slice(1) + '_' + v).join('-');
   if (!document.getElementById(key)) {
     const W = 7, T = parts.reduce((s, [, v]) => s + v, 0);
