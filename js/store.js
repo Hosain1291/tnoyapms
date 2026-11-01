@@ -21,7 +21,7 @@ function freshStore(meta) {
   ids.forEach(id => seats[id] = defaultSeat(id));
   return {
     v: 3, map: meta.id, parties: defaultParties(meta),
-    seats, maps: {}, nextId: meta.parties.length + 1, sel: 'p1'
+    seats, maps: {}, nextId: meta.parties.length + 1, sel: 'p1', partyVersion: meta.partyVersion
   };
 }
 
@@ -36,6 +36,13 @@ function normalize(s) {
   if (old && s.parties.map(p => p.name).join('|') === old.join('|') &&
       !Object.values(s.maps).some(mp => Object.values(mp.d || {}).some(x => Object.values(x.a || {}).some(v => v > 0)))) resetParties(s);
   fillPartyMeta(s);
+  // 지도의 기본 정당 색·순서가 바뀌면(partyVersion) 이름이 같은 정당에 새 색과 순서를 적용 (칠한 결과는 그대로)
+  if (MAP.partyVersion && s.partyVersion !== MAP.partyVersion) {
+    const defs = defaultParties(MAP), order = defs.map(d => d.name);
+    s.parties.forEach(p => { const d = defs.find(x => x.name === p.name); if (d) p.colors = d.colors; });
+    s.parties.sort((a, b) => { const i = order.indexOf(a.name), j = order.indexOf(b.name); return (i < 0 ? 999 : i) - (j < 0 ? 999 : j); });
+    s.partyVersion = MAP.partyVersion;
+  }
   if (s.sel !== 'toss' && !s.parties.find(p => p.id === s.sel)) s.sel = s.parties[0] ? s.parties[0].id : 'toss';
   return s;
 }
