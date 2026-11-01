@@ -320,3 +320,4 @@ body.present #chartSec{display:block!important}
 .pm-regs em{font-style:normal;font-size:11px;color:var(--mute);margin-left:4px}
 .pm-del{flex:none;padding:4px 9px;color:var(--mute)}
 .pm-del:hover{color:#fff;background:#a3262a}
+#tip .tnote{color:var(--mute);font-size:11px;line-height:1.45;margin:3px 0 2px;max-width:230px}

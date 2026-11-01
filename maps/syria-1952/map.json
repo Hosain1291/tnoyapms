@@ -1,0 +1,137 @@
+{
+ "id": "syria-1952",
+ "name": "시리아 의회 선거",
+ "subtitle": "1952년 행정구역 · 1954년 총선(142석) 기준",
+ "tag": "SYRIAN CHAMBER OF DEPUTIES",
+ "svg": "map.svg",
+ "width": 921.834,
+ "height": 761.916,
+ "regions": {
+  "Syria": "시리아"
+ },
+ "regionAlias": {},
+ "views": [
+  {
+   "key": "all",
+   "name": "시리아 전체",
+   "sub": "10개 주(1952)",
+   "regions": [
+    "Syria"
+   ],
+   "box": [
+    0,
+    0,
+    921.834,
+    761.916
+   ],
+   "big": true
+  }
+ ],
+ "parties": [
+  {
+   "name": "인민당",
+   "color": "#3d7bd9",
+   "note": "حزب الشعب"
+  },
+  {
+   "name": "바트당",
+   "color": "#d23c3c",
+   "note": "حزب البعث"
+  },
+  {
+   "name": "국민당",
+   "color": "#45a157",
+   "note": "الحزب الوطني"
+  },
+  {
+   "name": "시리아 사회민족당",
+   "color": "#8e5bd0",
+   "note": "SSNP"
+  },
+  {
+   "name": "시리아 공산당",
+   "color": "#a3262a",
+   "note": "الحزب الشيوعي"
+  },
+  {
+   "name": "무슬림 형제단",
+   "color": "#2e7d32",
+   "note": "الإخوان المسلمون"
+  },
+  {
+   "name": "아랍 해방운동",
+   "color": "#e39a2d",
+   "note": "حركة التحرير العربي"
+  },
+  {
+   "name": "사회협동당",
+   "color": "#2aa6ad",
+   "note": "حزب التعاون الاشتراكي"
+  },
+  {
+   "name": "무소속",
+   "color": "#9aa3a8"
+  }
+ ],
+ "defaultSeats": 1,
+ "seats": {
+  "Damascus-City": 13,
+  "Damascus": 14,
+  "Aleppo": 40,
+  "Latakia": 16,
+  "Deir-ez-Zor": 13,
+  "Homs": 15,
+  "Hama": 10,
+  "Hasakah": 11,
+  "Daraa": 5,
+  "Suwayda": 5
+ },
+ "names": {
+  "Damascus-City": "다마스쿠스 시",
+  "Damascus": "다마스쿠스 주",
+  "Aleppo": "알레포",
+  "Homs": "홈스",
+  "Hama": "하마",
+  "Latakia": "라타키아",
+  "Daraa": "다라",
+  "Suwayda": "스웨이다",
+  "Deir-ez-Zor": "데이르에조르",
+  "Hasakah": "하사카"
+ },
+ "labels": {
+  "Damascus-City": "Damascus city",
+  "Damascus": "Damascus",
+  "Aleppo": "Aleppo",
+  "Homs": "Homs",
+  "Hama": "Hama",
+  "Latakia": "Lattakia",
+  "Daraa": "Dara",
+  "Suwayda": "Suwayda",
+  "Deir-ez-Zor": "Deir ez-Zor",
+  "Hasakah": "Hasakah"
+ },
+ "regionOf": {
+  "Damascus-City": "Syria",
+  "Damascus": "Syria",
+  "Aleppo": "Syria",
+  "Homs": "Syria",
+  "Hama": "Syria",
+  "Latakia": "Syria",
+  "Daraa": "Syria",
+  "Suwayda": "Syria",
+  "Deir-ez-Zor": "Syria",
+  "Hasakah": "Syria"
+ },
+ "seatNotes": {
+  "Damascus-City": "다마스쿠스 시 13",
+  "Damascus": "구타 3·두마 3·나벡 2·쿠타이파 1·쿠네이트라 2·카타나 2·자바다니 1",
+  "Aleppo": "알레포 14·시메온산 4·이들리브 3·만비즈 2·하림 2·자라블루스 1·지스르 알슈구르 2·알밥 2·아자즈 2·아인 알아랍 1·아프린 3·마아렛 알누만 2 + 알레포 사막 부족 2",
+  "Latakia": "라타키아 시 2·라타키아 2·하파 2·자블레 3·바니야스 2·타르투스 2·사피타 3",
+  "Deir-ez-Zor": "데이르에조르 5·마야딘 2·아부카말 2·라카 3 + 사막 부족 1",
+  "Homs": "홈스 10·탈칼라흐 2 + 시리아 사막·하사나 부족 2 + 타드무르 부족 1",
+  "Hama": "하마 6·살라미야 2·마시아프 2",
+  "Hasakah": "하사카 4·티그리스 1·카미실리 4 + 자지라 베두인 2",
+  "Daraa": "다라 2·이즈라 2·자위야 1",
+  "Suwayda": "스웨이다 2·살카드 1·샤흐바 1 + 드루즈 산 사막 부족 1"
+ }
+}

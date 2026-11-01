@@ -199,7 +199,7 @@ function showTip(id, cx, cy) {
   const tip = $('#tip');
   if (cx !== undefined) tipXY = [cx, cy];
   const x = M.d[id] || { a: {} }, S = seatsOf(id);
-  let h = `<div><span class="t">${esc(nameOf(id))}</span><span class="j">${id}</span></div><div style="color:var(--mute);font-size:12px">${esc(regionName(region[id]))} · ${isPres() ? '선거인단 ' + S : S + '석'}${x.off ? ' · 비활성' : ''}${x.lock ? ' · 잠김' : ''}</div>`;
+  let h = `<div><span class="t">${esc(nameOf(id))}</span><span class="j">${id}</span></div><div style="color:var(--mute);font-size:12px">${esc(regionName(region[id]))} · ${isPres() ? '선거인단 ' + S : S + '석'}${x.off ? ' · 비활성' : ''}${x.lock ? ' · 잠김' : ''}</div>` + (MAP.seatNotes && MAP.seatNotes[id] ? `<div class="tnote">${esc(MAP.seatNotes[id])}</div>` : '');
   if (!x.off) {
     let u = 0;
     store.parties.forEach(p => { const v = x.a[p.id]; if (v) { u += v; h += `<div class="l"><span class="sw" style="background:${p.colors[x.m || 0]}"></span>${esc(p.name)} <span style="color:var(--mute);font-size:11px">${MARGINS[x.m || 0]}</span><b style="margin-left:auto">${v}</b></div>`; } });
